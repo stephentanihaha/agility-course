@@ -1,0 +1,58 @@
+
+html{color-scheme:light}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;-webkit-text-size-adjust:100%}
+img{max-width:100%}
+</style>
+</head>
+<body>
+<div id="lock" role="dialog" aria-modal="true" aria-labelledby="lockTitle">
+  <form id="lockForm" class="lockcard" autocomplete="off">
+    <svg viewBox="0 0 40 40" width="52" height="52" aria-hidden="true"><rect width="40" height="40" rx="10" fill="#1f6b45"/><path d="M7 30C11 20 15 12 20 12s9 8 13 18" fill="none" stroke="#f7f4ec" stroke-width="2.6" stroke-linecap="round"/><circle cx="31" cy="9" r="3.4" fill="#e0337a"/></svg>
+    <h1 id="lockTitle">Desainer Course Agility</h1>
+    <p>Masukkan passcode untuk membuka aplikasi.</p>
+    <div class="lockfield">
+      <input id="lockIn" type="password" placeholder="Passcode" aria-label="Passcode" autocapitalize="off" autocorrect="off" spellcheck="false" autofocus>
+      <button type="button" id="lockEye" aria-label="Lihat passcode" title="Lihat passcode"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g id="lockEyeIco"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></g></svg></button>
+    </div>
+    <p class="lockerr" id="lockErr" aria-live="polite"></p>
+    <button type="submit" class="lockgo">Buka</button>
+  </form>
+</div>
+<style>
+#lock{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:var(--bg,#eef1ec)}
+html.unlocked #lock{display:none}
+html:not(.unlocked) body>*:not(#lock):not(script):not(style){visibility:hidden}
+.lockcard{width:min(360px,100%);background:var(--surface,#fff);border:1px solid var(--line,#dde3da);border-radius:18px;padding:26px 22px;box-shadow:0 10px 30px rgba(0,0,0,.12);display:grid;gap:10px;justify-items:center;text-align:center}
+.lockcard h1{font-family:var(--display,inherit);font-size:22px;margin:6px 0 0}
+.lockcard p{margin:0;color:var(--muted,#5e6b61);font-size:14px}
+.lockfield{position:relative;width:100%;margin-top:6px}
+.lockfield input{width:100%;font:500 17px var(--body,inherit);padding:12px 48px 12px 14px;border:1px solid var(--line,#dde3da);border-radius:10px;background:var(--surface-2,#f6f8f5);color:var(--fg,#16201a)}
+.lockfield input:focus{outline:2px solid var(--accent,#1f6b45);outline-offset:1px}
+.lockfield button{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:42px;height:42px;border:0;background:transparent;color:var(--muted,#5e6b61);border-radius:8px;display:grid;place-items:center;cursor:pointer}
+.lockerr{color:var(--danger,#c2372c)!important;min-height:18px;font-size:13px!important}
+.lockgo{width:100%;min-height:46px;border:0;border-radius:10px;background:var(--accent,#1f6b45);color:var(--accent-fg,#fff);font:600 16px var(--body,inherit);cursor:pointer}
+@keyframes lockshake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.lockcard.shake{animation:lockshake .35s}
+</style>
+<script>
+(function(){
+  var H='477104fa1fb84f23c4e90b7be652dff007d5052448d0107ea907c6f565e5cd2d',K='agility-unlock';
+  var de=document.documentElement;
+  try{if(localStorage.getItem(K)===H)de.classList.add('unlocked');}catch(e){}
+  function hex(b){return Array.from(new Uint8Array(b)).map(function(x){return x.toString(16).padStart(2,'0')}).join('')}
+  function sha(t){return crypto.subtle.digest('SHA-256',new TextEncoder().encode('agility-course|'+t)).then(hex)}
+  document.addEventListener('DOMContentLoaded',function(){
+    if(de.classList.contains('unlocked'))return;
+    var f=document.getElementById('lockForm'),i=document.getElementById('lockIn'),err=document.getElementById('lockErr'),eye=document.getElementById('lockEye'),ico=document.getElementById('lockEyeIco');
+    eye.addEventListener('click',function(){var show=i.type==='password';i.type=show?'text':'password';
+      eye.setAttribute('aria-label',show?'Sembunyikan passcode':'Lihat passcode');eye.title=eye.getAttribute('aria-label');
+      ico.innerHTML=show?'<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.6 6.6A17 17 0 0 0 2 12s3.6 7 10 7a9.7 9.7 0 0 0 5.4-1.6"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/>':'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>';i.focus();});
+    i.addEventListener('input',function(){err.textContent='';});
+    f.addEventListener('submit',function(e){e.preventDefault();sha(i.value.trim()).then(function(h){
+      if(h===H){try{localStorage.setItem(K,H);}catch(e){}de.classList.add('unlocked');window.dispatchEvent(new Event('resize'));}
+      else{err.textContent='Passcode salah, coba lagi.';var c=f;c.classList.remove('shake');void c.offsetWidth;c.classList.add('shake');i.select();}
+    }).catch(function(){err.textContent='Browser ini tidak mendukung pengecekan passcode. Buka lewat alamat https.';});});
+  });
+})();
+</script>

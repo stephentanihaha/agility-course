@@ -1,0 +1,17 @@
+{
+  "name": "Desainer Course Agility",
+  "short_name": "Course Agility",
+  "description": "Desain course dog agility: susun rintangan, tarik jalur anjing, hitung SCT/MCT dan cek aturan FCI.",
+  "lang": "id",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f2f4ef",
+  "theme_color": "#2e6b3a",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
