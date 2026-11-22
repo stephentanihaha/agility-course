@@ -97,6 +97,11 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
 - **Ukuran & sentuhan**:
   - `sizeSvg()` membuat peta pas satu layar. `HS`/`HSv` memperbesar pegangan di layar sentuh (`COARSE`).
   - `pinchStart`/`pinchEnd` mengurus pinch. `revealMap()` dan `focusStage()` memastikan peta kelihatan penuh.
+- **Ruang peta di layar lebar** (bukan `sheetmode`, ≥760 px; v64):
+  - Header, bar alat, dan jarak antar-panel dirapatkan; palet satu kolom (96 px); panel kanan 330 px.
+  - `#panelBtn` menyembunyikan panel kanan (≥1180 px, `html.panel-off`, disimpan di `agility-panel-off`).
+  - `html.sidetools`: kalau ruang kosong di kiri-kanan peta setinggi penuh ≥92 px per sisi, `.stagebar` jadi kolom tipis melayang (Susun/Jalur di kiri; Tampilan, ▶, 👁, panel di kanan) supaya peta memakai seluruh tinggi. Diputuskan di `sizeSvg()`.
+  - `#selbar` melayang di pojok kiri bawah peta, satu baris (geser ke samping kalau panjang), disembunyikan kalau tidak ada yang dipilih.
 - **HP & tablet**:
   - `html.sheetmode` aktif saat lebar < 760 atau layar sentuh < 1400. Panel muncul lewat `#mnav`.
   - Menu "Tampilan" muncul lewat container query `.stage` ≤ 735px.
@@ -115,7 +120,7 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
   - Teks di luar DOM yang ikut diterjemahkan: SVG ekspor gambar (`tr()` pada teks di markup), nama course dari generator dan tombol Baru.
   - **Teks UI baru wajib ditambahkan ke `I18N`** (atau `I18N_RE`). Cara cek: jalankan app dengan `localStorage['agility-lang']='"en"'` dan cari kata Indonesia yang tersisa.
 - **localStorage**:
-  - `agility-current`, `agility-saved`, `agility-scheme` (lama: `agility-field`), `agility-theme`, `agility-tab`, `agility-designer`, `agility-hidepath`, `agility-simhand`, `agility-hint-off`, `agility-trace`, `agility-lang`.
+  - `agility-current`, `agility-saved`, `agility-scheme` (lama: `agility-field`), `agility-theme`, `agility-tab`, `agility-designer`, `agility-hidepath`, `agility-simhand`, `agility-hint-off`, `agility-trace`, `agility-lang`, `agility-panel-off`.
   - Khusus PWA: `agility-unlock`.
 
 ## Cara ngetes
