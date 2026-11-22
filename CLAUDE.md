@@ -84,7 +84,10 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
   - `NOLINE` = weave, tunnel, ctunnel, dogwalk, aframe, teeter, longjump (garis jalur tidak digambar di dalamnya).
 - **Cek FCI**:
   - `renderChecks` menampilkan daftar cek.
-  - `segBad` menandai jarak di luar 5–9 m atau lurus lebih dari 7 m.
+  - `segBad` menandai jarak di luar 5–9 m atau lurus lebih dari 7 m. Ini sesuai *FCI Agility Judging Guidelines*: minimal 5 m di jalur anjing, maksimal 7 m garis lurus dan 9 m di jalur anjing (diukur dari titik keluar ke titik masuk).
+  - **Jarak antar rintangan minimal 1 m** (v70, FCI Judging Guidelines; pengecualian tunnel di bawah dog walk/A-frame): `closePairs()` memodelkan tiap rintangan sebagai kapsul (`shapeOf`: titik + jari-jari) dan mengukur jarak bersih semua pasangan (`segSeg`). Ditandai garis merah putus-putus di peta (`closeMarkup`).
+  - **Contact dimasuki dan ditinggalkan lurus** (v70; FCI: arah datang & kecepatan ke contact harus diperhitungkan): `contactCrooked(R)` — arah garis 1,5 m sebelum masuk maks 30° dari papan, 1,5 m sesudah keluar maks 45°. `buildConn` memberi pegangan minimal 2,2 m di ujung contact (`ko/ki` negatif di `cubic()` = panjang minimal).
+  - Perbaiki otomatis (`fixProblems`/`fixMoves`) dan generator (`genScore`, `genRepair`: putar contact ±10–30°, dorong rintangan yang berdempetan; satu putaran tambahan kalau belum bersih; kalau tetap belum bersih, `autoFix` dijalankan) ikut kedua aturan ini. Contoh A1/CH/HUB disesuaikan sedikit supaya tetap bersih.
   - `pathCollisions(R)` / `insideObs` mendeteksi tabrakan.
   - `handlerSides(R)` mengembalikan `steps` dan `sides` (Ki/Ka).
 - **Perbaiki otomatis** (`#fixBtn`): `fixProblems`, `fixMoves`, `autoFix`.
@@ -128,7 +131,7 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
 ## Cara ngetes
 
 - `tests/trace.mjs` menguji upload gambar, atur pojok dengan mouse dan ketuk (iPhone 13), posisi gambar, rintangan bisa ditaruh di atasnya, dan gambar tetap ada setelah muat ulang.
-- `tests/regression.mjs` menguji contoh A1/A3/CH/HUB tanpa `#checks li.bad`, dua bahasa (EN menerjemahkan UI/peta, ID mengembalikan), bar rintangan (Arah/Backside/Wrap), tombol Baru + Undo, table hilang dari palet, Backside/Wrap memutari wing (jarak ke tiang > 0,45 m, tanpa tabrakan, siklus sisi lain lalu mati), wrap otomatis saat jalur balik menembus jump, generator N kali bersih dan berisi weave, dan tidak ada error JS.
+- `tests/regression.mjs` menguji contoh A1/A3/CH/HUB tanpa `#checks li.bad`, dua bahasa (EN menerjemahkan UI/peta, ID mengembalikan), bar rintangan (Arah/Backside/Wrap), tombol Baru + Undo, table hilang dari palet, Backside/Wrap memutari wing (jarak ke tiang > 0,45 m, tanpa tabrakan, siklus sisi lain lalu mati), wrap otomatis saat jalur balik menembus jump, jarak minimal 1 m & contact lurus, generator N kali bersih dan berisi weave, dan tidak ada error JS.
 - Manual / tambahan:
   - **Perbaiki otomatis**: acak beberapa rintangan, klik `#fixBtn`, lalu cek masalahnya hilang.
   - **HP**: emulasi iPhone 13 / iPad. Uji pinch dengan CDP `Input.dispatchTouchEvent`.
