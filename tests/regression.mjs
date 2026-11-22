@@ -42,6 +42,18 @@ for (const t of ['a1', 'a3', 'ch', 'hub']) {
   if (bad.length) fail++;
 }
 
+// tombol Baru: arena kosong, ukuran tetap, Undo mengembalikan course lama
+{
+  await tab('tpl'); await page.click('.tplcard[data-tpl="ch"]');
+  const before = await page.evaluate(() => ({ n: course.items.length, w: course.w, h: course.h, size: course.size }));
+  await page.click('#newTop');
+  const after = await page.evaluate(() => ({ n: course.items.length, s: course.seq.length, w: course.w, h: course.h, size: course.size, name: course.name }));
+  await page.click('#undo');
+  const back = await page.evaluate(() => course.items.length);
+  const ok = after.n === 0 && after.s === 0 && after.w === before.w && after.h === before.h && after.size === before.size && after.name === 'Course baru' && back === before.n;
+  console.log(`${ok ? 'ok   ' : 'GAGAL'} tombol Baru + Undo`); if (!ok) fail++;
+}
+
 let genBad = 0;
 for (let i = 0; i < GEN_RUNS; i++) {
   await tab('gen');

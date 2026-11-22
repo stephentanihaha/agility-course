@@ -78,6 +78,8 @@ button{font:500 14px var(--body);cursor:pointer;color:inherit}
 @media (max-width:759px){
   .stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%}.stat{min-width:0;padding:5px 8px}.stat b{font-size:20px}.stat span{font-size:10px}
   .actions{width:100%}.actions .btn{flex:1}.actions .iconbtn{flex:0 0 42px}
+  /* HP tegak: Baru, Undo, Gambar cukup ikon supaya bar aksi tetap satu baris */
+  #newTop,#undo,#pngTop{font-size:0;gap:0;flex:0 0 46px;padding-inline:0}
   .palette{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
   .pgroup{flex:0 0 auto}.pgrid{display:flex;gap:2px}.chip{min-width:62px}
 }
@@ -277,6 +279,7 @@ textarea{font:12px/1.4 ui-monospace,Menlo,monospace;min-height:70px;resize:verti
     <div class="actions">
       
       <button class="btn iconbtn" id="themeBtn" title="Ganti ke tema gelap" aria-label="Ganti ke tema gelap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path id="themeIco" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+      <button class="btn" id="newTop" title="Course baru (kosong). Course sekarang bisa dikembalikan dengan Undo."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M12 11v6M9 14h6"/></svg>Baru</button>
       <button class="btn" id="undo" title="Batalkan langkah terakhir (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>Undo</button>
       <button class="btn" id="pngTop" title="Buat gambar course"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/></svg>Gambar</button>
       <button class="btn primary" id="saveTop" title="Simpan course"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v6h8V3M8 21v-7h8v7"/></svg>Simpan</button>
@@ -444,7 +447,7 @@ textarea{font:12px/1.4 ui-monospace,Menlo,monospace;min-height:70px;resize:verti
       </div>
 
       <div class="tabpanel" data-panel="file" hidden>
-        <p class="note" style="text-align:right;margin:-4px 0 8px">Versi aplikasi: 57</p>
+        <p class="note" style="text-align:right;margin:-4px 0 8px">Versi aplikasi: 58</p>
         <div class="sect">
           <h2>Simpan</h2>
           <button class="btn primary block" id="save">Simpan course ini</button>
@@ -1177,7 +1180,10 @@ $('#save').onclick=()=>{const s=savedAll();const n=(course.name||'Tanpa nama').t
 $('#savedList').addEventListener('click',e=>{const s=savedAll();const l=e.target.closest('[data-load]'),d=e.target.closest('[data-delname]');
   if(l){pushHist();course=migrate(JSON.parse(JSON.stringify(s[l.dataset.load])));sel=null;syncInputs();commit();}
   if(d){if(d.dataset.confirm){delete s[d.dataset.delname];store.set('agility-saved',s);renderSaved();}else{d.dataset.confirm=1;d.textContent='Yakin?';}}});
-$('#newC').onclick=()=>{pushHist();course={name:'Course baru',w:course.w,h:course.h,speed:course.speed,mctSpeed:course.mctSpeed,cls:course.cls,items:[],seq:[]};sel=null;syncInputs();commit();};
+// course baru: ukuran arena, kecepatan, kelas, dan ukuran anjing ikut course sebelumnya; course lama bisa kembali lewat Undo
+function newCourse(){pushHist();if(placing)setPlacing(null);pathMode=false;course={name:'Course baru',w:course.w,h:course.h,speed:course.speed,mctSpeed:course.mctSpeed,size:course.size,cls:course.cls,items:[],seq:[]};sel=null;wpSel=null;syncInputs();commit();
+  if(!COARSE)$('#cname').select();}
+$('#newC').onclick=newCourse;$('#newTop').onclick=newCourse;
 
 // bagikan
 $('#copyJson').onclick=async()=>{const t=JSON.stringify(course);try{await navigator.clipboard.writeText(t);$('#shareMsg').textContent='Kode course disalin. Kirim ke anggota lain lalu tempel di kolom di atas.';}catch(e){$('#imp').value=t;$('#imp').select();$('#shareMsg').textContent='Kode ada di kolom di atas, sudah terpilih. Salin manual.';}};

@@ -99,6 +99,7 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
 - **HP & tablet**:
   - `html.sheetmode` aktif saat lebar < 760 atau layar sentuh < 1400. Panel muncul lewat `#mnav`.
   - Menu "Tampilan" muncul lewat container query `.stage` ≤ 735px.
+- **Course baru**: `newCourse()` dipakai tombol `#newTop` (bar atas) dan `#newC` (tab File). Ukuran arena, kecepatan, kelas, dan ukuran anjing ikut course sebelumnya; course lama kembali lewat Undo. Di HP tegak, `#newTop`/`#undo`/`#pngTop` tampil sebagai ikon saja.
 - **Jiplak gambar** (tab Course → "Jiplak gambar"):
   - Data di `agility-trace` (terpisah dari course, tidak ikut undo/kode/ekspor): `{src (dataURL JPEG, maks 2000 px), iw, ih, x0, y0, x1, y1, op, on}`. `(x0,y0)`/`(x1,y1)` = piksel gambar untuk pojok arena (0,0) dan (w,h); gambar diregangkan per sumbu, jadi ikut kalau ukuran arena diubah.
   - `traceDraw()` mengisi `<g id="trace">` (di antara `#field` dan `#layer`, `pointer-events="none"`) tanpa membangun ulang `<image>` tiap render.
