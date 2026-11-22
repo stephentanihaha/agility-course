@@ -163,7 +163,7 @@ html.sheetmode .sheetback{display:block}
 #simHand[aria-pressed="false"]{color:var(--muted)}
 #simBtn[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 /* arena */
-.stage{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);display:grid;align-content:start;align-self:start;min-width:0;overflow:hidden}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);display:grid;grid-template-columns:minmax(0,1fr);align-content:start;align-self:start;min-width:0;overflow:hidden}
 .schemesel{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:9px;background:var(--surface);padding:2px 2px 2px 7px;color:var(--muted)}
 .schemesel select{width:auto;border:0;background:transparent;padding:5px 2px;min-height:30px;font-size:13px;color:var(--fg);cursor:pointer}
 .schemesel .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
@@ -311,9 +311,9 @@ textarea{font:12px/1.4 ui-monospace,Menlo,monospace;min-height:70px;resize:verti
 html.sidetools:not(.sheetmode) .stagebar{position:absolute;inset:6px 6px auto 6px;z-index:6;padding:0;border:0;background:none;display:grid;grid-template-columns:auto 1fr auto;gap:4px;align-items:start;pointer-events:none}
 html.sidetools:not(.sheetmode) .stagebar>*{pointer-events:auto}
 html.sidetools:not(.sheetmode) .stagebar>.spacer{display:none}
-html.sidetools:not(.sheetmode) #modeSeg{grid-column:1;grid-row:1/span 6;flex-direction:column;box-shadow:var(--shadow)}
+html.sidetools:not(.sheetmode) #modeSeg{grid-column:1;grid-row:1;flex-direction:column;box-shadow:var(--shadow)}
 html.sidetools:not(.sheetmode) #modeSeg button{min-height:34px;padding:4px 10px}
-html.sidetools:not(.sheetmode) .stagebar>:not(#modeSeg):not(.spacer):not(.viewopts){grid-column:3;box-shadow:var(--shadow)}
+html.sidetools:not(.sheetmode) .stagebar>:not(#modeSeg):not(#selbar):not(.spacer):not(.viewopts){grid-column:3;box-shadow:var(--shadow)}
 html.sidetools:not(.sheetmode) .viewbtn{display:inline-flex;font-size:0;gap:0;width:38px;min-height:36px;padding:0;justify-content:center}
 html.sidetools:not(.sheetmode) .viewopts{display:none;position:absolute;right:46px;top:0;z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:10px;flex-direction:column;align-items:stretch;gap:8px;min-width:220px}
 html.sidetools:not(.sheetmode) .viewopts.open{display:flex}
@@ -323,6 +323,26 @@ html.sidetools:not(.sheetmode) .stagebar .iconbtn{min-height:36px}
   html:not(.sheetmode) .langsw button{min-height:20px;padding:0 7px;font-size:10.5px}
   html:not(.sheetmode) #cname{line-height:1.15}
 }
+/* bar rintangan terpilih tidak menutupi peta: di layar lebar ia dipindah (JS) ke dalam .stagebar.
+   Bar alat di atas: satu baris bersama bar alat, chip tampilan masuk menu Tampilan.
+   Bar alat di samping (sidetools): tombol disusun vertikal di kolom kiri, di bawah Susun/Jalur. */
+html.selinbar .stagebar{position:relative;flex-wrap:nowrap}
+html.selinbar .stagebar>:not(#selbar):not(.spacer){flex-shrink:0}
+html.selinbar .stagebar>#selbar{position:static;flex:0 1 auto;min-width:0;max-width:none;border:0;box-shadow:none;background:transparent;padding:0 2px;margin:0 0 0 6px;min-height:0;gap:4px;border-radius:0}
+html.selinbar .stagebar>#selbar .info{font-size:13px;white-space:nowrap}
+html.selinbar .stagebar>#selbar .info b{font-size:15px}
+html.selinbar .stagebar>#selbar .btn{min-height:30px;padding:3px 9px;font-size:13px}
+html.selinbar:not(.sidetools) .viewbtn{display:inline-flex;min-height:32px;padding:4px 10px;font-size:13px}
+html.selinbar:not(.sidetools) .viewopts{display:none;position:absolute;right:10px;top:calc(100% + 6px);z-index:30;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:10px;flex-direction:column;align-items:stretch;gap:8px;min-width:220px}
+html.selinbar:not(.sidetools) .viewopts.open{display:flex}
+html.selinbar:not(.sidetools) .viewopts .chiptoggle{justify-content:flex-start;padding:9px 12px;font-size:14px}
+html.sidetools:not(.sheetmode) .stagebar>#selbar{position:absolute;left:0;top:82px;bottom:auto;right:auto;max-width:none;margin:0;flex-direction:column;align-items:stretch;flex-wrap:nowrap;overflow:visible;width:84px;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);padding:5px}
+html.sidetools:not(.sheetmode) .stagebar>#selbar .info{white-space:normal;font-size:11.5px;line-height:1.25;margin:0 0 2px}
+html.sidetools:not(.sheetmode) .stagebar>#selbar .info b{display:block;font-size:13px}
+html.sidetools:not(.sheetmode) .stagebar>#selbar .btn{min-height:28px;padding:2px 4px;font-size:12px;width:100%}
+html.sidetools:not(.sheetmode) .stagebar>#selbar .seg{flex-direction:column}
+html.sidetools:not(.sheetmode) .stagebar>#selbar .bend{flex-direction:column;align-items:stretch}
+html.sidetools:not(.sheetmode) .stagebar>#selbar #bend{width:100%}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -510,7 +530,7 @@ html.sidetools:not(.sheetmode) .stagebar .iconbtn{min-height:36px}
       </div>
 
       <div class="tabpanel" data-panel="file" hidden>
-        <p class="note" style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:-4px 0 8px"><span class="langsw seg" role="group" aria-label="Bahasa / Language"><button data-lang="id">ID</button><button data-lang="en">EN</button></span><span id="verLabel">Versi aplikasi: 66</span></p>
+        <p class="note" style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:-4px 0 8px"><span class="langsw seg" role="group" aria-label="Bahasa / Language"><button data-lang="id">ID</button><button data-lang="en">EN</button></span><span id="verLabel">Versi aplikasi: 67</span></p>
         <div class="sect">
           <h2>Simpan</h2>
           <button class="btn primary block" id="save">Simpan course ini</button>
@@ -1057,6 +1077,9 @@ function sizeSvg(){const svg=$('#arena'),wr=$('#wrap'),{w,h}=course,ratio=(w+3)/
       hFull=Math.max(220,(innerHeight<540?innerHeight:innerHeight-(st.top+scrollY))-14-ban);
     de.classList.toggle('sidetools',(stg.clientWidth-Math.min(stg.clientWidth,hFull*ratio))/2>=92);}
   else de.classList.remove('sidetools');
+  // bar rintangan terpilih: di layar lebar masuk ke .stagebar (tidak menutupi peta), di HP/tablet kembali di bawah peta
+  {const sb0=$('#selbar'),bar=$('.stagebar'),wide=!de.classList.contains('sheetmode')&&innerWidth>=760;de.classList.toggle('selinbar',wide);
+    if(wide&&sb0.parentNode!==bar)bar.insertBefore(sb0,$('#modeSeg').nextSibling);else if(!wide&&sb0.parentNode===bar)$('.stage').appendChild(sb0);}
   const sbar=$('#simBar'),simH=sbar&&!sbar.hidden?sbar.offsetHeight+14:0,nr=$('#mnav').getBoundingClientRect(),nav=de.classList.contains('sheetmode')&&nr.width>nr.height?nr.height:0,sb=de.classList.contains('sidetools')?0:($('.stagebar').offsetHeight||50);
   let avH;if(innerWidth<760||innerHeight<540)avH=innerHeight-sb-simH-nav-18;else avH=innerHeight-(wr.getBoundingClientRect().top+scrollY)-nav-14;
   avH=Math.max(220,avH);const avW=wr.clientWidth||600,fit=Math.min(avW,avH*ratio);
