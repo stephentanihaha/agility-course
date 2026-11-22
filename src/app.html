@@ -179,6 +179,9 @@ html.sheetmode .sheetback{display:block}
 .banner .btn{min-height:32px;padding:4px 10px;font-size:13px}
 .canvaswrap{position:relative;min-width:0}
 .canvaswrap>.zoom{position:absolute;bottom:14px;right:22px;z-index:3;background:var(--surface);box-shadow:var(--shadow)}
+/* atur pojok jiplak: pojok kanan bawah arena harus bisa diketuk, jadi zoom pindah ke kiri */
+html.calib .canvaswrap>.zoom{right:auto;left:22px;transform-origin:bottom left}
+@media (max-width:759px){html.calib .canvaswrap>.zoom{left:8px}}
 .chiptoggle input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
 .chiptoggle:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
 .chiptoggle:has(input:checked)::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--accent)}
@@ -295,6 +298,7 @@ textarea{font:12px/1.4 ui-monospace,Menlo,monospace;min-height:70px;resize:verti
         <label class="chiptoggle" title="Sisi handler: Ki = kiri anjing, Ka = kanan anjing"><input type="checkbox" id="showHand" checked> Handler</label>
         <label class="chiptoggle" title="Garis jarak ke rintangan terdekat saat rintangan dipilih"><input type="checkbox" id="showGuide" checked> Cek jarak</label>
         <label class="chiptoggle" title="Zona masuk/keluar di tire, wall, spread, A-frame, dog walk, teeter, dan long jump"><input type="checkbox" id="showZone"> Zona masuk</label>
+        <label class="chiptoggle" id="traceChip" hidden title="Gambar course di latar untuk dijiplak"><input type="checkbox" id="showTrace" checked> Gambar latar</label>
         <label class="schemesel" title="Skema warna peta course"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.9 1.2-1.8-.5-1-.2-2.2 1.1-2.2H17a4 4 0 0 0 4-4c0-5-4-10-9-10z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7" r="1.2"/><circle cx="15.5" cy="7.5" r="1.2"/></svg><span class="sr">Warna</span><select id="schemeSel" aria-label="Skema warna"></select></label>
         </div>
         <button class="btn iconbtn" id="simBtn" title="Simulasi lari anjing &amp; handler" aria-label="Simulasi lari"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg></button>
@@ -306,6 +310,10 @@ textarea{font:12px/1.4 ui-monospace,Menlo,monospace;min-height:70px;resize:verti
         <button class="btn danger" id="seqClear">Kosongkan jalur</button>
         <button class="btn primary" id="seqDone">Selesai</button>
       </div>
+      <div class="banner" id="traceBanner" hidden>
+        <p id="traceText"></p>
+        <button class="btn" id="traceCancel">Batal</button>
+      </div>
       <div class="canvaswrap">
         <div class="simbar" id="simBar" hidden>
           <button class="btn iconbtn" id="simPlay" aria-label="Putar"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path id="simPlayIco" d="M8 5.5v13l10.5-6.5z"/></svg></button>
@@ -316,7 +324,7 @@ textarea{font:12px/1.4 ui-monospace,Menlo,monospace;min-height:70px;resize:verti
           <button class="btn iconbtn" id="simClose" aria-label="Tutup simulasi"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
         </div>
         <span class="zoom"><button class="btn" id="zOut" aria-label="Perkecil">−</button><button class="zval" id="zVal" title="Pas satu layar">100%</button><button class="btn" id="zIn" aria-label="Perbesar">+</button></span>
-        <div class="wrap" id="wrap"><svg id="arena" xmlns="http://www.w3.org/2000/svg"><g id="layer"></g><g id="ghost" pointer-events="none" opacity="0.55"></g><g id="sim" pointer-events="none"></g></svg></div>
+        <div class="wrap" id="wrap"><svg id="arena" xmlns="http://www.w3.org/2000/svg"><g id="field"></g><g id="trace" pointer-events="none"></g><g id="layer"></g><g id="ghost" pointer-events="none" opacity="0.55"></g><g id="sim" pointer-events="none"></g></svg></div>
         <div class="empty" id="emptyHint" hidden>
           <div class="card sect" style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;position:relative">
             <button class="btn iconbtn hintclose" id="hintClose" aria-label="Tutup petunjuk" title="Tutup"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
@@ -355,6 +363,19 @@ textarea{font:12px/1.4 ui-monospace,Menlo,monospace;min-height:70px;resize:verti
             <label for="aw">Panjang (m)<input type="number" id="aw" min="10" max="60" step="1"></label>
             <label for="ah">Lebar (m)<input type="number" id="ah" min="10" max="40" step="1"></label>
           </div>
+        </div>
+        <div class="sect" id="traceSect">
+          <h2>Jiplak gambar</h2>
+          <p class="note">Pasang gambar course (foto atau screenshot) sebagai latar samar, cocokkan pojok arenanya, lalu taruh rintangan di atasnya. Atur dulu panjang dan lebar arena sesuai gambar.</p>
+          <label class="btn block" for="traceFile" id="tracePick" style="cursor:pointer;color:var(--fg);font-size:14px">Pilih gambar…</label>
+          <input type="file" id="traceFile" accept="image/*" hidden>
+          <div id="traceCtl" class="sect" hidden>
+            <button class="btn primary block" id="traceCal">Atur pojok arena</button>
+            <label for="traceOp">Kepekatan gambar<input type="range" id="traceOp" min="10" max="90" step="5" style="accent-color:var(--accent)"></label>
+            <div class="btngrid"><label class="chiptoggle" style="justify-content:center"><input type="checkbox" id="traceOn" checked> Tampilkan</label><button class="btn danger" id="traceDel">Hapus gambar</button></div>
+          </div>
+          <p class="note" id="traceMsg" aria-live="polite"></p>
+          <p class="note">Gambar hanya disimpan di browser ini dan tidak ikut ke kode course atau gambar ekspor.</p>
         </div>
         <div class="sect">
           <h2>Ukuran anjing</h2>
@@ -423,7 +444,7 @@ textarea{font:12px/1.4 ui-monospace,Menlo,monospace;min-height:70px;resize:verti
       </div>
 
       <div class="tabpanel" data-panel="file" hidden>
-        <p class="note" style="text-align:right;margin:-4px 0 8px">Versi aplikasi: 56</p>
+        <p class="note" style="text-align:right;margin:-4px 0 8px">Versi aplikasi: 57</p>
         <div class="sect">
           <h2>Simpan</h2>
           <button class="btn primary block" id="save">Simpan course ini</button>
@@ -904,7 +925,7 @@ function render(){
   sizeSvg();$('#wrap').style.background=F.edge;
   const R=route();lastRoute=R;
   const hp=hidePath&&!pathMode;
-  $('#layer').innerHTML=fieldMarkup()+(hp?'':segHitMarkup(R))+zonesMarkup()+itemsMarkup(true)+(hp?'':pathMarkup(R,$('#showDist').checked)+($('#showHand').checked&&!window.__sim?handMarkup(R):'')+collMarkup(R))+guideMarkup()+badgesMarkup(R)+(hp?'':wpMarkup(R)+handlesMarkup(R))+tubeHandles();
+  $('#field').innerHTML=fieldMarkup();$('#layer').innerHTML=(hp?'':segHitMarkup(R))+zonesMarkup()+itemsMarkup(true)+(hp?'':pathMarkup(R,$('#showDist').checked)+($('#showHand').checked&&!window.__sim?handMarkup(R):'')+collMarkup(R))+guideMarkup()+badgesMarkup(R)+(hp?'':wpMarkup(R)+handlesMarkup(R))+tubeHandles();
   const sct=Math.ceil(R.len/(course.speed||1));
   $('#sLen').textContent=Math.round(R.len);$('#sObs').textContent=R.count;$('#sSct').textContent=sct;$('#sMct').textContent=Math.ceil(R.len/(course.mctSpeed||2.5));
   renderChecks(R);
@@ -1000,8 +1021,9 @@ $('#selbar').addEventListener('click',e=>{
 const svg=$('#arena'),wrap=$('#wrap');
 const snap=v=>Math.round(v*4)/4,snapF=v=>Math.round(v*10)/10;
 function toSvg(e){const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;return pt.matrixTransform(svg.getScreenCTM().inverse());}
-let placeTap=null,pathTap=null,tbDrag=null,drag=null,pan=null,raf=0,rotDrag=null,hDrag=null,wpDrag=null,segDrag=null,wpSel=null,lastWpTap=null;
+let calib=null,calibTap=null,placeTap=null,pathTap=null,tbDrag=null,drag=null,pan=null,raf=0,rotDrag=null,hDrag=null,wpDrag=null,segDrag=null,wpSel=null,lastWpTap=null;
 svg.addEventListener('pointerdown',e=>{
+  if(calib){if(e.pointerType==='touch'){calibTap={x:e.clientX,y:e.clientY};pan={x:e.clientX,y:e.clientY,sl:wrap.scrollLeft,st:wrap.scrollTop,ly:e.clientY};e.preventDefault();return;}calibTapAt(toSvg(e));e.preventDefault();return;}
   if(placing){if(e.pointerType==='touch'){placeTap={x:e.clientX,y:e.clientY,id:e.pointerId};pan={x:e.clientX,y:e.clientY,sl:wrap.scrollLeft,st:wrap.scrollTop,ly:e.clientY};e.preventDefault();return;}const p=toSvg(e);placeAt(p.x,p.y);e.preventDefault();return;}
   const tb=e.target.closest('[data-tb]');
   if(tb){const it=course.items.find(i=>i.id===sel);if(it){tbDrag={it,w:+tb.dataset.tb,moved:false};svg.setPointerCapture(e.pointerId);e.preventDefault();return;}}
@@ -1052,6 +1074,7 @@ svg.addEventListener('pointermove',e=>{
     else window.scrollBy(0,-dy);}
 });
 const end=e=>{
+  if(calibTap){const t=calibTap;calibTap=null;pan=null;if(e&&calib&&Math.hypot(e.clientX-t.x,e.clientY-t.y)<10)calibTapAt(toSvg(e));return;}
   if(placeTap){const t=placeTap;placeTap=null;pan=null;if(e&&Math.hypot(e.clientX-t.x,e.clientY-t.y)<10&&placing){const p=toSvg(e);placeAt(p.x,p.y);}return;}
   if(pathTap){const t=pathTap;pathTap=null;pan=null;if(e&&Math.hypot(e.clientX-t.x,e.clientY-t.y)<10){pushHist();course.seq.push({id:t.id,dir:0});sel=t.id;commit();}return;}
   if(tbDrag){if(tbDrag.moved)commit();tbDrag=null;return;}
@@ -1104,7 +1127,7 @@ function revealMap(){if(!(innerWidth<760||innerHeight<540)||zoom<=1)return;const
   const need=Math.min(r.bottom-vb,st);if(need>4)scrollBy({top:need,behavior:'smooth'});}
 function focusStage(){if(!(innerWidth<760||innerHeight<540)||zoom<=1)return;const t=$('.stage').getBoundingClientRect().top;if(Math.abs(t-6)>8)scrollBy({top:t-6,behavior:'smooth'});}
 function cancelGesture(){const moved=[drag,rotDrag,hDrag,wpDrag,tbDrag].some(x=>x&&x.moved)||(segDrag&&segDrag.created);
-  drag=pan=rotDrag=hDrag=wpDrag=tbDrag=segDrag=null;placeTap=null;pathTap=null;if(moved&&history.length)undo();}
+  drag=pan=rotDrag=hDrag=wpDrag=tbDrag=segDrag=null;placeTap=null;pathTap=null;calibTap=null;if(moved&&history.length)undo();}
 // Cubit dua jari: selama gerakan peta cuma di-scale lewat CSS (mulus), ukuran asli dihitung saat jari dilepas
 function pinchStart(){cancelGesture();pathTap=null;placeTap=null;const [a,b]=[...touchPts.values()],s=$('#arena'),r=s.getBoundingClientRect(),mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
   const pt=s.createSVGPoint();pt.x=mx;pt.y=my;const q=pt.matrixTransform(s.getScreenCTM().inverse());
@@ -1625,10 +1648,64 @@ function hideHint(){if(hintOff)return;hintOff=true;store.set('agility-hint-off',
 $('#hintClose').onclick=hideHint;
 // ketuk di mana saja di peta (di luar kartu) juga menutup petunjuk
 $('#wrap').addEventListener('pointerdown',()=>{if(!$('#emptyHint').hidden)hideHint();},true);
+// ===== Jiplak gambar: gambar course sebagai latar samar, dicocokkan lewat dua pojok arena =====
+// Disimpan terpisah dari course (agility-trace) supaya kode course tetap kecil: {src,iw,ih,x0,y0,x1,y1,op,on}.
+// (x0,y0) dan (x1,y1) = piksel gambar untuk pojok arena (0,0) dan (w,h); gambar diregangkan per sumbu.
+let trace=store.get('agility-trace'),traceHref=null;if(!(trace&&trace.src&&trace.iw))trace=null;
+function traceSave(){try{if(trace)localStorage.setItem('agility-trace',JSON.stringify(trace));else localStorage.removeItem('agility-trace');return true;}
+  catch(e){try{localStorage.removeItem('agility-trace');}catch(_){}return false;}}
+function traceDraw(){const g=$('#trace');
+  if(!trace||!trace.on){if(traceHref){g.textContent='';traceHref=null;}return;}
+  let im=g.firstChild;if(!im){im=document.createElementNS('http://www.w3.org/2000/svg','image');im.setAttribute('preserveAspectRatio','none');g.appendChild(im);}
+  if(traceHref!==trace.src){im.setAttribute('href',trace.src);traceHref=trace.src;}
+  const {w,h}=course,sx=w/(trace.x1-trace.x0),sy=h/(trace.y1-trace.y0);
+  im.setAttribute('x',-trace.x0*sx);im.setAttribute('y',-trace.y0*sy);im.setAttribute('width',trace.iw*sx);im.setAttribute('height',trace.ih*sy);
+  g.setAttribute('opacity',calib?Math.max(trace.op,0.85):trace.op);}
+function calibStart(){if(!trace)return;if(placing)setPlacing(null);pathMode=false;sel=null;wpSel=null;trace.on=true;traceSave();calib={a:null};
+  $('#traceMsg').textContent='';closeSheet();syncTrace();
+  // pastikan seluruh peta kelihatan supaya kedua pojok bisa diketuk
+  const st=$('.stage').getBoundingClientRect();if(st.top<0||st.bottom>innerHeight)scrollBy({top:st.top-6,behavior:'smooth'});}
+function calibStop(){calib=null;calibTap=null;render();}
+function calibTapAt(p){const {w,h}=course,ix=trace.x0+p.x/w*(trace.x1-trace.x0),iy=trace.y0+p.y/h*(trace.y1-trace.y0);
+  if(!calib.a){calib.a=[ix,iy];calib.pa=[p.x,p.y];render();return;}
+  const [ax,ay]=calib.a;
+  if(Math.abs(ix-ax)<trace.iw*0.04||Math.abs(iy-ay)<trace.ih*0.04){$('#traceText').textContent='Titik kedua terlalu dekat dengan titik pertama. Ketuk pojok kanan bawah arena.';return;}
+  Object.assign(trace,{x0:Math.min(ax,ix),y0:Math.min(ay,iy),x1:Math.max(ax,ix),y1:Math.max(ay,iy)});traceSave();calibStop();
+  // cek perbandingan sisi: pojok di gambar vs ukuran arena
+  const want=Math.round(w*(trace.y1-trace.y0)/(trace.x1-trace.x0)),ok=Math.abs(want-h)/h<0.06;
+  $('#traceMsg').textContent='Pojok arena sudah dicocokkan.'+(ok?'':` Perbandingan sisi di gambar mendekati ${w} × ${want} m, sedangkan arena ${w} × ${h} m. Cek ukuran arena, lalu atur pojok lagi kalau perlu.`);}
+function traceMarks(){if(!calib)return '';const r=0.35*HSv;let s='';
+  if(calib.pa){const [x,y]=calib.pa;s+=`<g stroke="${F.path}" stroke-width="${0.08*HSv}" fill="none"><circle cx="${x}" cy="${y}" r="${r}"/><line x1="${x-r*2}" y1="${y}" x2="${x+r*2}" y2="${y}"/><line x1="${x}" y1="${y-r*2}" x2="${x}" y2="${y+r*2}"/></g>`;}
+  return s;}
+function syncTrace(){traceUi();render();}
+function traceUi(){const has=!!trace;$('#traceCtl').hidden=!has;$('#traceChip').hidden=!has;$('#tracePick').textContent=has?'Ganti gambar…':'Pilih gambar…';
+  if(has){$('#showTrace').checked=$('#traceOn').checked=trace.on;$('#traceOp').value=Math.round(trace.op*100);}}
+traceUi();
+$('#showTrace').onchange=$('#traceOn').onchange=e=>{trace.on=e.target.checked;if(!trace.on)calib=null;traceSave();syncTrace();};
+$('#traceOp').oninput=e=>{trace.op=e.target.value/100;traceDraw();};$('#traceOp').onchange=()=>traceSave();
+$('#traceCal').onclick=calibStart;$('#traceCancel').onclick=calibStop;
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&calib)calibStop();});
+$('#traceDel').onclick=e=>{const b=e.currentTarget;if(!b.dataset.confirm){b.dataset.confirm=1;b.textContent='Yakin hapus?';return;}
+  delete b.dataset.confirm;b.textContent='Hapus gambar';trace=null;calib=null;traceSave();$('#traceMsg').textContent='';syncTrace();};
+$('#traceFile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const msg=$('#traceMsg');msg.textContent='Memuat gambar…';
+  const url=URL.createObjectURL(f),img=new Image();
+  img.onload=()=>{URL.revokeObjectURL(url);const op=trace?trace.op:0.5;let saved=false;
+    // perkecil supaya muat di penyimpanan browser; coba ukuran lebih kecil kalau penuh
+    for(const [max,q] of [[2000,0.82],[1600,0.75],[1200,0.7]]){const k=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight)),iw=Math.round(img.naturalWidth*k),ih=Math.round(img.naturalHeight*k);
+      const c=document.createElement('canvas');c.width=iw;c.height=ih;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,iw,ih);x.drawImage(img,0,0,iw,ih);
+      trace={src:c.toDataURL('image/jpeg',q),iw,ih,x0:0,y0:0,x1:iw,y1:ih,op,on:true};if(traceSave()){saved=true;break;}}
+    msg.textContent=saved?'':'Penyimpanan browser penuh, jadi gambar hanya dipakai sampai halaman ditutup.';calibStart();};
+  img.onerror=()=>{URL.revokeObjectURL(url);msg.textContent='File ini tidak bisa dibuka sebagai gambar. Pakai JPG atau PNG.';};
+  img.src=url;};
+
 const _render=render;
-render=function(){_render();
+render=function(){
+  if(calib&&(pathMode||placing||!trace))calib=null;
+  _render();traceDraw();
+  $('#layer').style.opacity=calib?0.3:'';$('#ghost').innerHTML=calib?traceMarks():placing?$('#ghost').innerHTML:'';svg.style.cursor=calib||placing?'crosshair':'';
+  document.documentElement.classList.toggle('calib',!!calib);  $('#traceBanner').hidden=!calib;if(calib)$('#traceText').innerHTML=calib.a?`<b>2/2</b> Ketuk pojok <b>kanan bawah</b> arena di gambar (titik ${course.w} × ${course.h} m).`:'<b>1/2</b> Ketuk pojok <b>kiri atas</b> arena di gambar (titik 0 × 0). Perbesar peta supaya pas.';
   if(sim){const D=buildSim(lastRoute);if(!D)simCloseFn();else{sim.D=D;sim.t=Math.min(sim.t,D.dur);if(!sim.playing)simDraw();}}
-  $('#emptyHint').hidden=course.items.length>0||!!placing||hintOff;
+  $('#emptyHint').hidden=course.items.length>0||!!placing||hintOff||!!(trace&&trace.on);
   const bad=document.querySelectorAll('#checks li.bad').length,bd=$('#fciBadge');
   const none=!course.seq.length;bd.textContent=none?'–':bad?bad:'✓';bd.classList.toggle('bad',!!bad&&!none);bd.classList.toggle('none',none);
   {const nb=$('#navBadge');nb.textContent=none?'':bad?bad:'✓';nb.className='nbadge'+(none?'':bad?' bad':' ok');}

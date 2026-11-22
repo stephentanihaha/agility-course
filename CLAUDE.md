@@ -14,6 +14,7 @@ pwa/parts/extra.js    fitur khusus PWA: Unduh/Buka/Kirim file .json, unduh/bagik
 pwa/public/           sw.js, manifest.webmanifest, icons/ (disalin apa adanya ke dist/)
 scripts/build.mjs     bentuk dist/ (PWA) dari src/app.html + pwa/
 tests/regression.mjs  tes regresi Playwright
+tests/trace.mjs       tes fitur jiplak gambar (desktop + iPhone 13)
 vercel.json           Vercel menjalankan build lalu menyajikan dist/
 ```
 
@@ -27,6 +28,7 @@ vercel.json           Vercel menjalankan build lalu menyajikan dist/
 node scripts/build.mjs              # bentuk dist/
 node tests/regression.mjs           # tes (butuh dist/; generator 30x)
 node tests/regression.mjs 5         # tes cepat, generator 5x
+node tests/trace.mjs                # tes jiplak gambar
 ```
 
 Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm i -D playwright && npx playwright install chromium`.
@@ -35,7 +37,7 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
 
 1. Ubah `src/app.html` (dan `pwa/` kalau perlu).
 2. Naikkan label `Versi aplikasi: NN` di `src/app.html` **dan** `const VERSION = 'vNN'` di `pwa/public/sw.js`. Build menolak kalau keduanya beda.
-3. `node scripts/build.mjs && node tests/regression.mjs`.
+3. `node scripts/build.mjs && node tests/regression.mjs && node tests/trace.mjs`.
 4. Deploy PWA: push ke GitHub (kalau project Vercel sudah tersambung ke repo ini), atau `npx vercel --prod` dari root repo.
 5. Artifact claude.ai: publish `src/app.html` ke https://claude.ai/artifact/8GPuBTMCyEGWi9kMZ6gNdj (baca dulu versi live-nya, lalu publish dengan `url` itu).
 
@@ -97,12 +99,18 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
 - **HP & tablet**:
   - `html.sheetmode` aktif saat lebar < 760 atau layar sentuh < 1400. Panel muncul lewat `#mnav`.
   - Menu "Tampilan" muncul lewat container query `.stage` ≤ 735px.
+- **Jiplak gambar** (tab Course → "Jiplak gambar"):
+  - Data di `agility-trace` (terpisah dari course, tidak ikut undo/kode/ekspor): `{src (dataURL JPEG, maks 2000 px), iw, ih, x0, y0, x1, y1, op, on}`. `(x0,y0)`/`(x1,y1)` = piksel gambar untuk pojok arena (0,0) dan (w,h); gambar diregangkan per sumbu, jadi ikut kalau ukuran arena diubah.
+  - `traceDraw()` mengisi `<g id="trace">` (di antara `#field` dan `#layer`, `pointer-events="none"`) tanpa membangun ulang `<image>` tiap render.
+  - Mode atur pojok: `calib` (`calibStart`, `calibTapAt`, `calibStop`), banner `#traceBanner`, `html.calib` memindah tombol zoom ke kiri supaya pojok kanan bawah bisa diketuk. Ketuk dua pojok berurutan; sesudahnya muncul peringatan kalau perbandingan sisi di gambar beda dari ukuran arena.
+  - Lapisan SVG `#arena`: `#field` (lapangan + grid) → `#trace` → `#layer` (rintangan, jalur, pegangan) → `#ghost` → `#sim`.
 - **localStorage**:
-  - `agility-current`, `agility-saved`, `agility-scheme` (lama: `agility-field`), `agility-theme`, `agility-tab`, `agility-designer`, `agility-hidepath`, `agility-simhand`, `agility-hint-off`.
+  - `agility-current`, `agility-saved`, `agility-scheme` (lama: `agility-field`), `agility-theme`, `agility-tab`, `agility-designer`, `agility-hidepath`, `agility-simhand`, `agility-hint-off`, `agility-trace`.
   - Khusus PWA: `agility-unlock`.
 
 ## Cara ngetes
 
+- `tests/trace.mjs` menguji upload gambar, atur pojok dengan mouse dan ketuk (iPhone 13), posisi gambar, rintangan bisa ditaruh di atasnya, dan gambar tetap ada setelah muat ulang.
 - `tests/regression.mjs` menguji contoh A1/A3/CH/HUB tanpa `#checks li.bad`, generator N kali bersih dan berisi weave, dan tidak ada error JS.
 - Manual / tambahan:
   - **Perbaiki otomatis**: acak beberapa rintangan, klik `#fixBtn`, lalu cek masalahnya hilang.
@@ -111,7 +119,6 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
 
 ## Ide berikutnya
 
-- Fitur jiplak gambar: latar samar, cocokkan dua titik pojok, lalu taruh rintangan di atasnya.
 - Database online (mis. Supabase) untuk sinkron antar perangkat dan dibagikan ke klub.
 - Simulasi: split time per rintangan, dan gaya handling (front/rear/blind cross).
 - Ekspor PDF peta kompetisi (A4/A3) dengan daftar rintangan.
