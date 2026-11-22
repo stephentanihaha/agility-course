@@ -80,7 +80,7 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
   - `geom()` membentuk geometri tiap rintangan.
   - `cubic()` membentuk sambungan Hermite, radius belok `TURN={S:1.0,M:1.3,I:1.45,L:1.6}`.
   - `buildConn` mengurus titik belok dan menghindari wing. `clampCone` membatasi sudut lewat jump.
-  - **Backside/Wrap** (tombol di bar rintangan, v59): `autoWrap(A,B)` memberi titik bantu tak tersimpan di busur yang mengelilingi tiang wing (pusat geser 0,8 m, jari-jari `TURN+0.2`), lengkap dengan arah larinya, hanya kalau `step.bs`/`step.wr` aktif. Course lama, contoh, dan generator tidak memakainya. `toggleBackside(i)` memaksa `dir` supaya anjing datang dari belakang palang. Kalau garis jalur ditarik, titik bantu disalin ke `wp` supaya bentuknya tidak loncat.
+  - **Backside/Wrap** (tombol di bar rintangan, v59): `autoWrap(A,B)` memberi titik bantu tak tersimpan di lingkaran sekitar tiang wing (jari-jari `TURN+0.2`, kerangka arah lari, pusat digeser ≥0,6 m ke sisi tolakan/mendarat). Backside: garis lurus menyinggung lingkaran → busur → keluar tepat di garis palang. Wrap: mendarat di garis palang → busur → lepas menyinggung ke rintangan berikutnya. Titik busur tiap ≤45°, disambung dengan pegangan busur persis (4/3·tan(Δ/4)·r) (v60). Rintangan sebelum backside diarahkan ke sisi luar wing, hanya kalau `step.bs`/`step.wr` aktif. Course lama, contoh, dan generator tidak memakainya. `toggleBackside(i)` memaksa `dir` supaya anjing datang dari belakang palang. Kalau garis jalur ditarik, titik bantu disalin ke `wp` supaya bentuknya tidak loncat.
   - `NOLINE` = weave, tunnel, ctunnel, dogwalk, aframe, teeter, longjump (garis jalur tidak digambar di dalamnya).
 - **Cek FCI**:
   - `renderChecks` menampilkan daftar cek.
