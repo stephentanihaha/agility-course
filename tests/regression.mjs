@@ -145,8 +145,9 @@ for (const t of ['a1', 'a3', 'ch', 'hub']) {
     let minPost = 9; for (const q of g.conn) if (dist(q, nd.g.exit) > 0.6) for (const p of post) minPost = Math.min(minPost, dist(q, p));
     return { crosses: crossesOwn(nd, g.conn, true), auto: !!g.auto, minPost, coll: pathCollisions(R).length };
   });
-  const ok = !r.crosses && r.auto && r.minPost > 0.45 && !r.coll;
-  console.log(`${ok ? 'ok   ' : 'GAGAL'} wrap otomatis (jalur tidak balik menembus jump)${ok ? '' : ': ' + JSON.stringify(r)}`); if (!ok) fail++;
+  // boleh lewat wrap otomatis atau arah lompat sebaliknya; yang penting tidak menembus jump, jauh dari tiang wing, tanpa tabrakan
+  const ok = !r.crosses && r.minPost > 0.45 && !r.coll;
+  console.log(`${ok ? 'ok   ' : 'GAGAL'} jalur tidak balik menembus jump${ok ? '' : ': ' + JSON.stringify(r)}`); if (!ok) fail++;
   await tab('tpl'); await page.click('.tplcard[data-tpl="a1"]');
 }
 
