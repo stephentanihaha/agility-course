@@ -343,6 +343,7 @@ html.sidetools:not(.sheetmode) .stagebar>#selbar .btn{min-height:28px;padding:2p
 html.sidetools:not(.sheetmode) .stagebar>#selbar .seg{flex-direction:column}
 html.sidetools:not(.sheetmode) .stagebar>#selbar .bend{flex-direction:column;align-items:stretch}
 html.sidetools:not(.sheetmode) .stagebar>#selbar #bend{width:100%}
+#errToast{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:2000;background:#c2372c;color:#fff;padding:10px 12px;border-radius:10px;font:13px/1.35 var(--body);box-shadow:0 6px 20px rgba(0,0,0,.3);cursor:pointer;word-break:break-word}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -530,7 +531,7 @@ html.sidetools:not(.sheetmode) .stagebar>#selbar #bend{width:100%}
       </div>
 
       <div class="tabpanel" data-panel="file" hidden>
-        <p class="note" style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:-4px 0 8px"><span class="langsw seg" role="group" aria-label="Bahasa / Language"><button data-lang="id">ID</button><button data-lang="en">EN</button></span><span id="verLabel">Versi aplikasi: 68</span></p>
+        <p class="note" style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:-4px 0 8px"><span class="langsw seg" role="group" aria-label="Bahasa / Language"><button data-lang="id">ID</button><button data-lang="en">EN</button></span><span id="verLabel">Versi aplikasi: 69</span></p>
         <div class="sect">
           <h2>Simpan</h2>
           <button class="btn primary block" id="save">Simpan course ini</button>
@@ -570,6 +571,11 @@ html.sidetools:not(.sheetmode) .stagebar>#selbar #bend{width:100%}
 </nav>
 <script>
 const $=s=>document.querySelector(s);
+// error yang tidak tertangkap ditampilkan di layar supaya bug khusus HP/Safari bisa dilaporkan lewat screenshot
+function showErr(m){try{let el=document.getElementById('errToast');if(!el){el=document.createElement('div');el.id='errToast';el.setAttribute('role','alert');el.setAttribute('translate','no');el.onclick=()=>el.remove();document.body.appendChild(el);}
+  el.textContent='⚠ '+m+'  ✕';}catch(_){}}
+window.addEventListener('error',e=>showErr((e.message||'Error')+(e.lineno?' @'+e.lineno+':'+(e.colno||0):'')));
+window.addEventListener('unhandledrejection',e=>showErr(String(e.reason&&e.reason.message||e.reason)));
 const store={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 // Warna rintangan tetap seperti peta course; warna lapangan ikut pilihan Rumput/Kertas
 const BASEC={bar:'',white:'#f7f4ec',red:'#d64545',blue:'#2f8fd6',green:'#8cc152',yellow:'#f2c230',body:'#c8442f',orange:'#f08a24',wood:'#7a6a58',badge:'#e0337a',
@@ -1827,7 +1833,8 @@ function simOpen(){const D=buildSim(lastRoute);if(!D){alertBox('Susun jalur dulu
 function simCloseFn(){if(sim)sim.playing=false;sim=null;$('#simBar').hidden=true;$('#simBtn').setAttribute('aria-pressed','false');$('#sim').innerHTML='';if(window.__sim){window.__sim=false;render();}}
 function alertBox(m){const b=$('#seqBanner');if(b&&!b.hidden)return;const el=$('#simTime');$('#simBar').hidden=false;el.textContent=m;$('#simSeek').hidden=true;$('#simPlay').hidden=true;$('#simSpeed').hidden=true;
   setTimeout(()=>{if(!sim){$('#simBar').hidden=true;}$('#simSeek').hidden=false;$('#simPlay').hidden=false;$('#simSpeed').hidden=false;},2600);}
-$('#simBtn').onclick=()=>{sim?simCloseFn():simOpen();};
+let simTog=0;$('#simBtn').onclick=()=>{const now=Date.now();if(now-simTog<450)return;simTog=now;
+  try{sim?simCloseFn():simOpen();}catch(err){sim=null;window.__sim=false;$('#simBtn').setAttribute('aria-pressed','false');showErr('Simulasi: '+(err&&err.message||err));}};
 $('#simClose').onclick=simCloseFn;
 function simHandSync(){const b=$('#simHand');b.setAttribute('aria-pressed',simHandOn);b.setAttribute('aria-label',simHandOn?'Sembunyikan handler':'Tampilkan handler');$('#simHandX').style.display=simHandOn?'none':'';}
 $('#simHand').onclick=()=>{simHandOn=!simHandOn;store.set('agility-simhand',simHandOn);simHandSync();simDraw();};simHandSync();

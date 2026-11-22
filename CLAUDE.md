@@ -94,6 +94,7 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
 - **Simulasi** (▶): `buildSim`, `simAt`, `simDraw`, `simLoop`.
   - Anjing: `vmax = max(3, speed×1,25)`, melambat di belokan dan di rintangan (`SIMF`), menunggu di teeter/table (`SIMWAIT`), meliuk di weave (`weavePts`).
   - Handler: `min(5,5 m/dtk, 90% vmax)`, akselerasi 4 m/dtk², menuju `spot` di sisi Ki/Ka, pindah target saat anjing 2,5 m dari rintangan.
+- **Penampil error** (v69): `showErr()` menampilkan error JS yang tidak tertangkap (`error`, `unhandledrejection`) sebagai kotak merah `#errToast` di bawah layar (ketuk untuk tutup), supaya bug khusus HP/Safari bisa dilaporkan lewat screenshot. Tombol ▶ (`#simBtn`) mengabaikan ketukan kedua dalam 450 ms (di Safari iPhone satu ketukan bisa terbaca dua kali → simulasi buka lalu langsung tutup) dan menangkap error `simOpen()`.
 - **Ukuran & sentuhan**:
   - `sizeSvg()` membuat peta pas satu layar. `HS`/`HSv` memperbesar pegangan di layar sentuh (`COARSE`).
   - `pinchStart`/`pinchEnd` mengurus pinch. `revealMap()` dan `focusStage()` memastikan peta kelihatan penuh.
