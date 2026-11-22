@@ -1,6 +1,6 @@
 // Service worker: simpan aplikasi supaya bisa dibuka tanpa internet.
 // Ganti VERSION setiap kali file aplikasi diperbarui.
-const VERSION = 'v58';
+const VERSION = 'v59';
 const APP = 'course-agility-' + VERSION;
 const FONTS = 'course-agility-fonts';
 const SHELL = ['./', './index.html', './manifest.webmanifest',

@@ -64,13 +64,13 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
 ```
 
 - `size` S/M/I/L. `cls.level` 1–3, `cls.type` agility/jumping. `migrate()` memperbarui format lama.
-- Jenis (`DEFS`): start, finish, jump, spread, tire, wall, longjump, tunnel (`len` 3/4), ctunnel (`len` 5/6, `b1`/`b2` derajat lengkung; bentuk C/J saja, tidak boleh S), weave, aframe, dogwalk, teeter, table.
+- Jenis (`DEFS`): start, finish, jump, spread, tire, wall, longjump, tunnel (`len` 3/4), ctunnel (`len` 5/6, `b1`/`b2` derajat lengkung; bentuk C/J saja, tidak boleh S), weave, aframe, dogwalk, teeter, table. Table sudah dihapus dari palet dan generator (v59); `DEFS.table` tetap ada supaya course lama masih terbuka.
 - `rot` (derajat), posisi saat `rot` 0:
   - jump: palang sepanjang sumbu x.
   - tunnel lurus, weave, dogwalk, aframe, teeter: memanjang sepanjang sumbu y.
   - ctunnel: tali busur sepanjang sumbu x.
   - longjump: papan horizontal (anjing bergerak sepanjang y).
-- `seq` (rintangan boleh dipakai lebih dari sekali): `dir` 0 = otomatis, ±1 = searah/berlawanan sumbu. `wp` = titik belok. `h` = pegangan Bezier.
+- `seq` (rintangan boleh dipakai lebih dari sekali): `dir` 0 = otomatis, ±1 = searah/berlawanan sumbu. `wp` = titik belok. `h` = pegangan Bezier. `bs` = backside, `wr` = wrap (1 = sisi wing otomatis, 2 = sisi lain; hanya jump/spread/wall/tire).
 - Contoh bawaan: `A1`, `A3`, `CH`, `HUB` di `TEMPLATES` (+ `klub` dari `sample()`).
 
 ## Peta kode (`src/app.html`)
@@ -80,6 +80,7 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
   - `geom()` membentuk geometri tiap rintangan.
   - `cubic()` membentuk sambungan Hermite, radius belok `TURN={S:1.0,M:1.3,I:1.45,L:1.6}`.
   - `buildConn` mengurus titik belok dan menghindari wing. `clampCone` membatasi sudut lewat jump.
+  - **Backside/Wrap** (tombol di bar rintangan, v59): `autoWrap(A,B)` memberi titik bantu tak tersimpan di busur yang mengelilingi tiang wing (pusat geser 0,8 m, jari-jari `TURN+0.2`), lengkap dengan arah larinya, hanya kalau `step.bs`/`step.wr` aktif. Course lama, contoh, dan generator tidak memakainya. `toggleBackside(i)` memaksa `dir` supaya anjing datang dari belakang palang. Kalau garis jalur ditarik, titik bantu disalin ke `wp` supaya bentuknya tidak loncat.
   - `NOLINE` = weave, tunnel, ctunnel, dogwalk, aframe, teeter, longjump (garis jalur tidak digambar di dalamnya).
 - **Cek FCI**:
   - `renderChecks` menampilkan daftar cek.
@@ -112,7 +113,7 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
 ## Cara ngetes
 
 - `tests/trace.mjs` menguji upload gambar, atur pojok dengan mouse dan ketuk (iPhone 13), posisi gambar, rintangan bisa ditaruh di atasnya, dan gambar tetap ada setelah muat ulang.
-- `tests/regression.mjs` menguji contoh A1/A3/CH/HUB tanpa `#checks li.bad`, generator N kali bersih dan berisi weave, dan tidak ada error JS.
+- `tests/regression.mjs` menguji contoh A1/A3/CH/HUB tanpa `#checks li.bad`, tombol Baru + Undo, table hilang dari palet, Backside/Wrap memutari wing (jarak ke tiang > 0,7 m, tanpa tabrakan, siklus sisi lain lalu mati), generator N kali bersih dan berisi weave, dan tidak ada error JS.
 - Manual / tambahan:
   - **Perbaiki otomatis**: acak beberapa rintangan, klik `#fixBtn`, lalu cek masalahnya hilang.
   - **HP**: emulasi iPhone 13 / iPad. Uji pinch dengan CDP `Input.dispatchTouchEvent`.

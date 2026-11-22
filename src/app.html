@@ -193,6 +193,7 @@ html.calib .canvaswrap>.zoom{right:auto;left:22px;transform-origin:bottom left}
 .selbar .info{font-size:14px;margin-right:auto;min-width:0}
 .selbar .info b{font-family:var(--display);font-size:18px}
 .selbar .btn{min-height:34px;padding:5px 10px}
+.selbar .btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
 .selbar .seg button{min-height:28px;padding:3px 10px;font-size:13px}
 .hint{color:var(--muted);font-size:14px}
 .bend{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
@@ -425,7 +426,7 @@ textarea{font:12px/1.4 ui-monospace,Menlo,monospace;min-height:70px;resize:verti
             <label><input type="checkbox" data-u="spread" checked> Spread</label><label><input type="checkbox" data-u="tire" checked> Tire</label>
             <label><input type="checkbox" data-u="wall"> Wall</label><label><input type="checkbox" data-u="longjump"> Long jump</label>
             <label><input type="checkbox" data-u="tunnel" checked> Tunnel lurus</label><label><input type="checkbox" data-u="ctunnel" checked> Tunnel lengkung</label>
-            <label><input type="checkbox" data-u="weave" checked> Weave</label><label><input type="checkbox" data-u="table"> Table</label>
+            <label><input type="checkbox" data-u="weave" checked> Weave</label>
             <label class="ct"><input type="checkbox" data-u="aframe" checked> A-frame</label><label class="ct"><input type="checkbox" data-u="dogwalk" checked> Dog walk</label>
             <label class="ct"><input type="checkbox" data-u="teeter" checked> Teeter</label>
           </div>
@@ -447,7 +448,7 @@ textarea{font:12px/1.4 ui-monospace,Menlo,monospace;min-height:70px;resize:verti
       </div>
 
       <div class="tabpanel" data-panel="file" hidden>
-        <p class="note" style="text-align:right;margin:-4px 0 8px">Versi aplikasi: 58</p>
+        <p class="note" style="text-align:right;margin:-4px 0 8px">Versi aplikasi: 59</p>
         <div class="sect">
           <h2>Simpan</h2>
           <button class="btn primary block" id="save">Simpan course ini</button>
@@ -546,7 +547,7 @@ function hitOf(it){
   if(it.type==='tunnel'){const L=tLen(it);return [-0.5,-L/2-0.2,1,L+0.4];}
   if(it.type==='ctunnel'){const P=tube(it).pts,xs=P.map(q=>q[0]),ys=P.map(q=>q[1]),x0=Math.min(...xs),y0=Math.min(...ys);return [x0-0.4,y0-0.4,Math.max(...xs)-x0+0.8,Math.max(...ys)-y0+0.8];}
   return DEFS[it.type].hit;}
-const ORDER=['jump','spread','tunnel:3','tunnel:4','ctunnel:5','ctunnel:6','weave','aframe','dogwalk','teeter','tire','wall','longjump','table','start','finish'];
+const ORDER=['jump','spread','tunnel:3','tunnel:4','ctunnel:5','ctunnel:6','weave','aframe','dogwalk','teeter','tire','wall','longjump','start','finish'];
 // Setengah panjang lintasan di dalam tiap rintangan (meter), searah sumbu-y lokal
 const HALF={jump:.35,spread:.6,wall:.35,tire:.35,longjump:.75,tunnel:2.5,weave:3.3,aframe:2.7,dogwalk:6,teeter:1.83,table:.5};
 
@@ -682,13 +683,36 @@ function hits(pts,self,g,prevIt,prevExit,nextIt){
 }
 function wpList(key,create){if(key==='fin'){if(create&&!course.finWp)course.finWp=[];return course.finWp||[];}
   const st=course.seq[+key.slice(1)];if(!st)return [];if(create&&!st.wp)st.wp=[];return st.wp||[];}
+// Backside & wrap (tombol di bar rintangan, disimpan di step: bs = backside, wr = wrap): kalau anjing masuk jump dari belakang
+// atau berbalik sesudah jump,
+// jalur diberi titik bantu di busur yang mengelilingi tiang wing (bukan putaran sempit yang menembus wing).
+// Busur: pusat di samping tiang wing, digeser 0,8 m ke sisi mendarat (wrap) atau sisi tolakan (backside), jari-jari R+0,2.
+const WRAPPY=new Set(['jump','spread','wall','tire']);
+function autoWrap(A,B){
+  const R=TURN[(course&&course.size)||'M'],rr=R+0.2,out=[],p0=A.g.exit,p1=B.g.entry;
+  if(dist(p0,p1)<1.5)return out;
+  const frame=(nd,a)=>({c:nd.g.cp||[nd.it.x,nd.it.y],a,bar:rotv(rad(nd.it),[1,0]),Wg:wingW(nd.it)});
+  const loc=(f,q)=>{const v=sub(q,f.c);return [dot(v,f.a),dot(v,f.bar)];};
+  // garis q1→q2 menembus bidang jump di dalam lebar wing + jarak aman?
+  const crossIn=(f,q1,q2)=>{const [d1,l1]=loc(f,q1),[d2,l2]=loc(f,q2);if(d1*d2>0)return false;const t=d1/((d1-d2)||1e-9);return Math.abs(l1+(l2-l1)*t)<f.Wg+0.9;};
+  // titik di busur sudut φ (0 = lurus ke depan, 90° = paling luar), arah lari mengitari tiang dari depan ke belakang
+  const arc=(f,sd,shift,deg)=>{const v=[f.bar[0]*sd,f.bar[1]*sd],o=add(add(f.c,f.a,shift),v,f.Wg),ph=deg*Math.PI/180;
+    return {p:add(add(o,f.a,rr*Math.cos(ph)),v,rr*Math.sin(ph)),t:add([f.a[0]*-Math.sin(ph),f.a[1]*-Math.sin(ph)],v,Math.cos(ph))};};
+  if(A.kind==='step'&&A.step.wr&&WRAPPY.has(A.it.type)){const f=frame(A,A.g.tOut),[d,l]=loc(f,p1);
+    if(d<0.5){const sd=(Math.sign(l)||1)*(A.step.wr===2?-1:1),q=arc(f,sd,0.8,45);out.push(q);if(crossIn(f,q.p,p1))out.push(arc(f,sd,0.8,135));}}
+  if(B.kind==='step'&&B.step.bs&&WRAPPY.has(B.it.type)){const f=frame(B,B.g.tIn),from=out.length?out[out.length-1].p:p0,[d,l]=loc(f,from);
+    if(d>-0.5){const sd=(Math.sign(l)||1)*(B.step.bs===2?-1:1),q=arc(f,sd,-0.8,135);if(crossIn(f,from,q.p))out.push(arc(f,sd,-0.8,45));out.push(q);}}
+  return out;
+}
 function buildConn(A,B,ko,ki,wps){
-  const p0=A.g.exit,t0=A.g.tOut,p1=B.g.entry,t1=B.g.tIn;
+  const p0=A.g.exit,t0=A.g.tOut,p1=B.g.entry,t1=B.g.tIn;let auto=null;
+  if(!(wps&&wps.length)){const v=autoWrap(A,B);if(v.length){auto=v.map(q=>q.p);wps=auto;}var autoT=v.map(q=>q.t);}
   if(wps&&wps.length){
-    const an=[p0,...wps,p1],ta=[t0];for(let j=1;j<an.length-1;j++)ta.push(norm(sub(an[j+1],an[j-1])));ta.push(t1);
+    const an=[p0,...wps,p1],ta=[t0];for(let j=1;j<an.length-1;j++)ta.push(auto?norm(autoT[j-1]):norm(sub(an[j+1],an[j-1])));ta.push(t1);
     const conn=[p0];let k0=0,k1=0;
-    for(let j=0;j<an.length-1;j++){conn.push(...cubic(an[j],ta[j],an[j+1],ta[j+1],j===0?ko:undefined,j===an.length-2?ki:undefined));if(j===0)k0=lastK[0];if(j===an.length-2)k1=lastK[1];}
-    return {conn,k0,k1};}
+    for(let j=0;j<an.length-1;j++){const ka=auto?0.42*dist(an[j],an[j+1]):undefined;
+      conn.push(...cubic(an[j],ta[j],an[j+1],ta[j+1],j===0&&ko?ko:ka,j===an.length-2&&ki?ki:ka));if(j===0)k0=lastK[0];if(j===an.length-2)k1=lastK[1];}
+    return {conn,k0,k1,auto};}
   const selfHits=c=>{let ha=0,hb=0;for(const q of c){if(insideObs(q,A.it)&&dist(q,p0)>0.6)ha++;if(insideObs(q,B.it)&&dist(q,p1)>0.6)hb++;}return [ha,hb];};
   let conn=dogLine(p0,t0,p1,t1,ko,ki),K=lastK,best={conn,k0:K[0],k1:K[1]},h=selfHits(conn),bh=h[0]+h[1];
   if(bh)for(const m of [1.5,2.1,2.8,3.6]){
@@ -708,7 +732,11 @@ function route(){
     const c=cen(nd.it),prev=nodes[i-1],next=nodes[i+1];
     let P=prev?prev.g.exit:null,N=next?cen(next.it):null;
     if(!P&&!N){P=add(c,[0,-1]);N=add(c,[0,1]);}else if(!P)P=add(c,sub(c,N));else if(!N)N=add(c,sub(c,P));
-    const fl=add(norm(sub(c,P)),norm(sub(N,c))),free=vlen(fl)>0.05?norm(fl):norm(sub(N,P)),ax=rotv(rad(nd.it),[0,1]);
+    const fl=add(norm(sub(c,P)),norm(sub(N,c))),free0=vlen(fl)>0.05?norm(fl):norm(sub(N,P)),ax=rotv(rad(nd.it),[0,1]);
+    // backside: anjing datang sesudah memutari wing, jadi arah lompat cuma dari sumbu + rintangan berikutnya; wrap: cuma dari arah datang
+    let free=free0;const st0=nd.kind==='step'&&nd.step;
+    if(st0&&st0.bs&&st0.dir){const sa=[ax[0]*st0.dir,ax[1]*st0.dir],f2=add(sa,norm(sub(N,c)));free=vlen(f2)>0.05?norm(f2):sa;}
+    else if(st0&&st0.wr&&prev)free=norm(sub(c,P));
     let signs;
     if(nd.kind==='start')signs=[dot(sub(N,c),ax)>=0?1:-1];
     else if(nd.kind==='finish')signs=[dot(sub(c,P),ax)>=0?1:-1];
@@ -737,7 +765,7 @@ function route(){
     const A=nodes[i-1],ko=A.step&&A.step.h&&A.step.h.out,ki=nd.step&&nd.step.h&&nd.step.h.in,key=nd.kind==='finish'?'fin':'w'+(nd.n-1),wps=nd.kind==='finish'?course.finWp:nd.step&&nd.step.wp,bc=buildConn(A,nd,ko,ki,wps),conn=bc.conn,K=[bc.k0,bc.k1];
     pts.push(...conn.slice(1),...nd.g.inner.slice(1));
     cur.push(...conn.slice(1));if(NOLINE.has(nd.it.type)){pieces.push(cur);cur=[nd.g.exit];}else cur.push(...nd.g.inner.slice(1));
-    segs.push({from:A,to:nd,d:plen(conn)+plen(A.g.inner)/2+plen(nd.g.inner)/2,gap:plen(conn),straight:dist(A.g.exit,nd.g.entry),k0:K[0],k1:K[1],key,wps:wps||[],conn,mid:conn[Math.floor(conn.length/2)]});
+    segs.push({from:A,to:nd,d:plen(conn)+plen(A.g.inner)/2+plen(nd.g.inner)/2,gap:plen(conn),straight:dist(A.g.exit,nd.g.entry),k0:K[0],k1:K[1],key,wps:wps||[],conn,auto:bc.auto,mid:conn[Math.floor(conn.length/2)]});
     arrows.push({p:nd.g.entry,t:nd.g.tIn});
   });
   if(cur.length>1)pieces.push(cur);
@@ -943,7 +971,8 @@ function renderSel(R){
   const nums=steps.map(nd=>'#'+nd.n).join(' & ');
   let extra='';const g=steps.length?R.segs.find(s=>s.to===steps[0]):null;
   if(g)extra=` · ${fmt(g.gap)} m dari ${g.from.kind==='step'?'#'+g.from.n:'start'}`;
-  const flips=d.num&&it.type!=='table'?steps.map(nd=>`<button class="btn" data-flip="${nd.n-1}" title="Balik arah lewat rintangan">⇄ Arah${steps.length>1?' #'+nd.n:''}</button>`).join(''):'';
+  const flips=d.num&&it.type!=='table'?steps.map(nd=>`<button class="btn" data-flip="${nd.n-1}" title="Balik arah lewat rintangan">⇄ Arah${steps.length>1?' #'+nd.n:''}</button>`
+    +(WRAPPY.has(it.type)?`<button class="btn" data-bs="${nd.n-1}" aria-pressed="${!!nd.step.bs}" title="Anjing memutari wing lalu melompat dari sisi belakang. Ketuk lagi: wing sisi lain. Ketuk ketiga: matikan.">Backside${nd.step.bs===2?' ⇆':''}${steps.length>1?' #'+nd.n:''}</button><button class="btn" data-wr="${nd.n-1}" aria-pressed="${!!nd.step.wr}" title="Sesudah melompat, anjing berbalik memutari wing. Ketuk lagi: wing sisi lain. Ketuk ketiga: matikan.">Wrap${nd.step.wr===2?' ⇆':''}${steps.length>1?' #'+nd.n:''}</button>`:'')).join(''):'';
   const tctl=it.type==='tunnel'?`<span class="seg">${[3,4].map(L=>`<button data-len="${L}" aria-pressed="${tLen(it)===L}">${L} m</button>`).join('')}</span>`
     :it.type==='ctunnel'?`<span class="seg">${[5,6].map(L=>`<button data-len="${L}" aria-pressed="${tLen(it)===L}">${L} m</button>`).join('')}</span><label class="bend" for="bend">Lengkungan<input type="range" id="bend" min="-220" max="220" step="5" value="${(it.b1??70)+(it.b2??70)}"><b id="bendVal">${(it.b1??70)+(it.b2??70)}°</b></label>`:'';
   bar.innerHTML=`<span class="info"><b>${nums?nums+' ':''}${d.label}${tLen(it)?' '+tLen(it)+' m':''}</b><span class="hint"> · ${it.rot}°${extra}</span></span>
@@ -996,6 +1025,14 @@ $('#palette').addEventListener('click',e=>{const b=e.target.closest('[data-add]'
 
 // aksi rintangan terpilih
 const clampX=x=>Math.min(course.w,Math.max(0,x)),clampY=y=>Math.min(course.h,Math.max(0,y));
+// Backside: nyalakan = arah lompat dipaksa supaya anjing datang dari sisi belakang palang, lalu jalur memutari wing.
+// Ketuk kedua = memutari wing sisi lain (bs=2). Ketuk ketiga = matikan, arah kembali otomatis.
+function toggleBackside(i){const st=course.seq[i],nd=lastRoute.nodes.find(n=>n.kind==='step'&&n.n===i+1);if(!st||!nd)return;pushHist();
+  if(st.bs===1){st.bs=2;commit();return;}
+  if(st.bs){delete st.bs;st.dir=0;if(st.h&&st.h.a!=null)delete st.h.a;commit();return;}
+  st.bs=1;const k=lastRoute.nodes.indexOf(nd),P=k>0?lastRoute.nodes[k-1].g.exit:null,c=nd.g.cp||[nd.it.x,nd.it.y];
+  // sudah datang dari belakang? arah tetap; kalau dari depan, balik arah
+  const front=P&&dot(sub(P,c),nd.g.tIn)<-0.5;st.dir=front?-nd.sign:nd.sign;if(front&&st.h&&st.h.a!=null)st.h.a+=Math.PI;commit();}
 function flipStep(i){const nd=lastRoute.nodes.find(n=>n.kind==='step'&&n.n===i+1);if(!nd)return;pushHist();course.seq[i].dir=-nd.sign;const h=course.seq[i].h;if(h&&h.a!=null)h.a+=Math.PI;commit();}
 let bendHist=false;
 $('#selbar').addEventListener('input',e=>{if(e.target.id!=='bend')return;const it=course.items.find(i=>i.id===sel);if(!it)return;
@@ -1004,6 +1041,8 @@ $('#selbar').addEventListener('change',e=>{if(e.target.id==='bend'){bendHist=fal
 $('#selbar').addEventListener('click',e=>{
   const ln=e.target.closest('[data-len]');if(ln){const it=course.items.find(i=>i.id===sel);if(it){pushHist();it.len=+ln.dataset.len;commit();}return;}
   const f=e.target.closest('[data-flip]');if(f){flipStep(+f.dataset.flip);return;}
+  const bs=e.target.closest('[data-bs]');if(bs){toggleBackside(+bs.dataset.bs);return;}
+  const wr=e.target.closest('[data-wr]');if(wr){const st=course.seq[+wr.dataset.wr];if(st){pushHist();if(st.wr===2)delete st.wr;else st.wr=st.wr?2:1;commit();}return;}
   const a=e.target.closest('[data-act]')?.dataset.act;
   if(a==='delwp'){delWp();return;}
   if(a==='cancelplace'){setPlacing(null);return;}
@@ -1055,8 +1094,9 @@ svg.addEventListener('pointermove',e=>{
   if(segDrag&&!segDrag.created){const p=toSvg(e);if(Math.hypot(p.x-segDrag.x,p.y-segDrag.y)>0.3){
       const g=lastRoute.segs.find(x=>x.key===segDrag.key);if(!g){segDrag=null;return;}
       const ci=q=>{let bi=0,bd=1e9;g.conn.forEach((c,k)=>{const d=dist(c,q);if(d<bd){bd=d;bi=k;}});return bi;};
-      const ni=ci([segDrag.x,segDrag.y]),l=wpList(segDrag.key,true),at=l.filter(w=>ci(w)<ni).length;
-      pushHist();l.splice(at,0,[snapF(p.x),snapF(p.y)]);segDrag.created=true;wpDrag={key:segDrag.key,idx:at,moved:true};sel=null;wpSel={key:segDrag.key,idx:at};render();}return;}
+      const l0=wpList(segDrag.key,true);let seeded=false;if(!l0.length&&g.auto){pushHist();seeded=true;l0.push(...g.auto.map(q=>[snapF(q[0]),snapF(q[1])]));}
+      const ni=ci([segDrag.x,segDrag.y]),l=l0,at=l.filter(w=>ci(w)<ni).length;
+      if(!seeded)pushHist();l.splice(at,0,[snapF(p.x),snapF(p.y)]);segDrag.created=true;wpDrag={key:segDrag.key,idx:at,moved:true};sel=null;wpSel={key:segDrag.key,idx:at};render();}return;}
   if(wpDrag){const p=toSvg(e),l=wpList(wpDrag.key);if(!l[wpDrag.idx])return;if(!wpDrag.moved){pushHist();wpDrag.moved=true;}
     l[wpDrag.idx]=[clampX(snapF(p.x)),clampY(snapF(p.y))];cancelAnimationFrame(raf);raf=requestAnimationFrame(render);return;}
   if(hDrag){const p=toSvg(e),q=[p.x,p.y],st=course.seq[hDrag.i],nd=lastRoute&&lastRoute.nodes.find(n=>n.kind==='step'&&n.n===hDrag.i+1);if(!st||!nd)return;
@@ -1465,7 +1505,7 @@ document.querySelectorAll('#genLvl,#genType').forEach(g=>g.addEventListener('cli
 $('#genBtn').onclick=genRun;
 
 // ===== Tampilan: tab, palet berkelompok, petunjuk awal =====
-const PGROUPS=[['Jump',['jump','spread','tire','wall','longjump']],['Tunnel',['tunnel:3','tunnel:4','ctunnel:5','ctunnel:6']],['Contact & weave',['aframe','dogwalk','teeter','weave']],['Lainnya',['table','start','finish']]];
+const PGROUPS=[['Jump',['jump','spread','tire','wall','longjump']],['Tunnel',['tunnel:3','tunnel:4','ctunnel:5','ctunnel:6']],['Contact & weave',['aframe','dogwalk','teeter','weave']],['Lainnya',['start','finish']]];
 renderPalette=function(){
   $('#palette').innerHTML=PGROUPS.map(([g,ks])=>`<div class="pgroup"><h3>${g}</h3><div class="pgrid">${ks.map(t=>`<button class="chip" data-add="${t}" aria-pressed="${!!placing&&placing.key===t}" title="Tambah ${DEFS[t.split(':')[0]].label}${t.includes(':')?' '+t.split(':')[1]+' m':''}"><svg viewBox="0 0 40 28" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${ICONS[t]}</svg><span>${SHORT[t]||DEFS[t.split(':')[0]].label}</span></button>`).join('')}</div></div>`).join('');
 };

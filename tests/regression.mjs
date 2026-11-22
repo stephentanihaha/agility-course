@@ -54,6 +54,49 @@ for (const t of ['a1', 'a3', 'ch', 'hub']) {
   console.log(`${ok ? 'ok   ' : 'GAGAL'} tombol Baru + Undo`); if (!ok) fail++;
 }
 
+// Table sudah tidak ada di palet dan generator
+{
+  const t = await page.evaluate(() => !!document.querySelector('#palette [data-add="table"]') || !!document.querySelector('#genUse [data-u="table"]'));
+  console.log(`${t ? 'GAGAL' : 'ok   '} table tidak ada di palet/generator`); if (t) fail++;
+}
+
+// Backside & Wrap: jalur memutari wing (tidak menembus), tombol berputar: aktif → sisi lain → mati
+{
+  const setC = c => page.evaluate(c => { course = migrate({ name: 'bs', w: 24, h: 30, speed: 4, mctSpeed: 2.5, size: 'M', cls: { level: 3, type: 'agility' }, ...c }); sel = null; commit(); }, c);
+  // ukur ruas jalur ke step i: titik terjauh di belakang bidang jump, sisi wing, dan jarak terdekat ke tiang wing
+  const probe = (i, wrapOut) => page.evaluate(([i, wrapOut]) => {
+    const R = lastRoute, nd = R.nodes.find(n => n.kind === 'step' && n.n === i + 1), it = nd.it, c = nd.g.cp || [it.x, it.y];
+    const a = wrapOut ? nd.g.tOut : nd.g.tIn, bar = rotv(rad(it), [1, 0]);
+    const g = wrapOut ? R.segs.find(s => s.from === nd) : R.segs.find(s => s.to === nd);
+    const posts = [add(c, bar, 1.05), add(c, bar, -1.05)];
+    let far = 0, lat = 0, minPost = 9;
+    for (const q of g.conn) { const v = sub(q, c), d = dot(v, a) * (wrapOut ? 1 : -1); if (d > far) { far = d; lat = dot(v, bar); }
+      if (dist(q, wrapOut ? nd.g.exit : nd.g.entry) > 0.6) for (const p of posts) minPost = Math.min(minPost, dist(q, p)); }
+    return { far, side: Math.sign(lat), minPost, coll: pathCollisions(R).length, st: course.seq[i] };
+  }, [i, wrapOut]);
+  let ok = true; const why = [];
+  await setC({ items: [{ id: 'j1', type: 'jump', x: 7, y: 26, rot: 0 }, { id: 'j2', type: 'jump', x: 10, y: 19, rot: 0 }, { id: 'j3', type: 'jump', x: 16, y: 24, rot: 60 }],
+    seq: [{ id: 'j1', dir: -1 }, { id: 'j2', dir: 0 }, { id: 'j3', dir: 0 }] });
+  await page.evaluate(() => { sel = 'j2'; render(); });
+  await page.click('#selbar [data-bs="1"]');
+  const b1 = await probe(1, false);
+  if (!(b1.st.bs === 1 && b1.st.dir && b1.far > 1.5 && b1.minPost > 0.7 && !b1.coll)) { ok = false; why.push('backside ' + JSON.stringify(b1)); }
+  await page.click('#selbar [data-bs="1"]');
+  const b2 = await probe(1, false);
+  if (!(b2.st.bs === 2 && b2.side === -b1.side && b2.minPost > 0.7 && !b2.coll)) { ok = false; why.push('backside sisi lain ' + JSON.stringify(b2)); }
+  await page.click('#selbar [data-bs="1"]');
+  const b3 = await page.evaluate(() => course.seq[1]);
+  if (b3.bs || b3.dir) { ok = false; why.push('backside mati ' + JSON.stringify(b3)); }
+  await setC({ items: [{ id: 'j1', type: 'jump', x: 6, y: 20, rot: 90 }, { id: 'j2', type: 'jump', x: 13, y: 20, rot: 0 }, { id: 'j3', type: 'jump', x: 13, y: 26, rot: 0 }],
+    seq: [{ id: 'j1', dir: 0 }, { id: 'j2', dir: -1 }, { id: 'j3', dir: 0 }] });
+  await page.evaluate(() => { sel = 'j2'; render(); });
+  await page.click('#selbar [data-wr="1"]');
+  const w1 = await probe(1, true);
+  if (!(w1.st.wr === 1 && w1.far > 1.5 && w1.minPost > 0.7 && !w1.coll)) { ok = false; why.push('wrap ' + JSON.stringify(w1)); }
+  console.log(`${ok ? 'ok   ' : 'GAGAL'} backside & wrap${ok ? '' : ': ' + why.join(' | ')}`); if (!ok) fail++;
+  await tab('tpl'); await page.click('.tplcard[data-tpl="a1"]'); // kembalikan arena normal untuk generator
+}
+
 let genBad = 0;
 for (let i = 0; i < GEN_RUNS; i++) {
   await tab('gen');
