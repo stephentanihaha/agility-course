@@ -2,7 +2,7 @@
 
 Aplikasi web untuk mendesain course dog agility gaya Smarter Agility dengan aturan FCI.
 Pemilik: Stephen (klub dog agility, calon juri FCI). Bahasa komunikasi: Indonesia santai ("gue/lo").
-Teks di aplikasi juga berbahasa Indonesia.
+Teks di kode ditulis dalam bahasa Indonesia; aplikasi punya pilihan bahasa ID/EN (lihat "Dua bahasa" di bawah).
 
 ## Struktur repo
 
@@ -14,6 +14,7 @@ pwa/parts/extra.js    fitur khusus PWA: Unduh/Buka/Kirim file .json, unduh/bagik
 pwa/public/           sw.js, manifest.webmanifest, icons/ (disalin apa adanya ke dist/)
 scripts/build.mjs     bentuk dist/ (PWA) dari src/app.html + pwa/
 tests/regression.mjs  tes regresi Playwright
+tests/trace.mjs       tes fitur jiplak gambar (desktop + iPhone 13)
 vercel.json           Vercel menjalankan build lalu menyajikan dist/
 ```
 
@@ -27,6 +28,7 @@ vercel.json           Vercel menjalankan build lalu menyajikan dist/
 node scripts/build.mjs              # bentuk dist/
 node tests/regression.mjs           # tes (butuh dist/; generator 30x)
 node tests/regression.mjs 5         # tes cepat, generator 5x
+node tests/trace.mjs                # tes jiplak gambar
 ```
 
 Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm i -D playwright && npx playwright install chromium`.
@@ -34,8 +36,8 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
 ## Rilis
 
 1. Ubah `src/app.html` (dan `pwa/` kalau perlu).
-2. Naikkan label `Versi aplikasi: NN` di `src/app.html` **dan** `const VERSION = 'vNN'` di `pwa/public/sw.js`. Build menolak kalau keduanya beda.
-3. `node scripts/build.mjs && node tests/regression.mjs`.
+2. Naikkan label `Versi aplikasi: NN` (`#verLabel`, tab File) di `src/app.html` **dan** `const VERSION = 'vNN'` di `pwa/public/sw.js`. Build menolak kalau keduanya beda.
+3. `node scripts/build.mjs && node tests/regression.mjs && node tests/trace.mjs`.
 4. Deploy PWA: push ke GitHub (kalau project Vercel sudah tersambung ke repo ini), atau `npx vercel --prod` dari root repo.
 5. Artifact claude.ai: publish `src/app.html` ke https://claude.ai/artifact/8GPuBTMCyEGWi9kMZ6gNdj (baca dulu versi live-nya, lalu publish dengan `url` itu).
 
@@ -62,13 +64,13 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
 ```
 
 - `size` S/M/I/L. `cls.level` 1–3, `cls.type` agility/jumping. `migrate()` memperbarui format lama.
-- Jenis (`DEFS`): start, finish, jump, spread, tire, wall, longjump, tunnel (`len` 3/4), ctunnel (`len` 5/6, `b1`/`b2` derajat lengkung; bentuk C/J saja, tidak boleh S), weave, aframe, dogwalk, teeter, table.
+- Jenis (`DEFS`): start, finish, jump, spread, tire, wall, longjump, tunnel (`len` 3/4), ctunnel (`len` 5/6, `b1`/`b2` derajat lengkung; bentuk C/J saja, tidak boleh S), weave, aframe, dogwalk, teeter, table. Table sudah dihapus dari palet dan generator (v59); `DEFS.table` tetap ada supaya course lama masih terbuka.
 - `rot` (derajat), posisi saat `rot` 0:
   - jump: palang sepanjang sumbu x.
   - tunnel lurus, weave, dogwalk, aframe, teeter: memanjang sepanjang sumbu y.
   - ctunnel: tali busur sepanjang sumbu x.
   - longjump: papan horizontal (anjing bergerak sepanjang y).
-- `seq` (rintangan boleh dipakai lebih dari sekali): `dir` 0 = otomatis, ±1 = searah/berlawanan sumbu. `wp` = titik belok. `h` = pegangan Bezier.
+- `seq` (rintangan boleh dipakai lebih dari sekali): `dir` 0 = otomatis, ±1 = searah/berlawanan sumbu. `wp` = titik belok. `h` = pegangan Bezier. `bs` = backside, `wr` = wrap (1 = sisi wing otomatis, 2 = sisi lain; hanya jump/spread/wall/tire).
 - Contoh bawaan: `A1`, `A3`, `CH`, `HUB` di `TEMPLATES` (+ `klub` dari `sample()`).
 
 ## Peta kode (`src/app.html`)
@@ -78,6 +80,7 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
   - `geom()` membentuk geometri tiap rintangan.
   - `cubic()` membentuk sambungan Hermite, radius belok `TURN={S:1.0,M:1.3,I:1.45,L:1.6}`.
   - `buildConn` mengurus titik belok dan menghindari wing. `clampCone` membatasi sudut lewat jump.
+  - **Backside/Wrap** (tombol di bar rintangan, v59): `autoWrap(A,B)` memberi titik bantu tak tersimpan di lingkaran sekitar tiang wing (jari-jari `max(1.1, TURN−0.1)` sejak v61, kerangka arah lari, pusat digeser ≥0,6 m ke sisi tolakan/mendarat). Backside: garis lurus menyinggung lingkaran → busur → keluar tepat di garis palang. Wrap: mendarat di garis palang → busur → lepas menyinggung ke rintangan berikutnya. Titik busur tiap ≤45°, disambung dengan pegangan busur persis (4/3·tan(Δ/4)·r) (v60). Rintangan sebelum backside diarahkan ke sisi luar wing, hanya kalau `step.bs`/`step.wr` aktif. Course lama, contoh, dan generator tidak memakainya. `toggleBackside(i)` memaksa `dir` supaya anjing datang dari belakang palang. Kalau garis jalur ditarik, titik bantu disalin ke `wp` supaya bentuknya tidak loncat.
   - `NOLINE` = weave, tunnel, ctunnel, dogwalk, aframe, teeter, longjump (garis jalur tidak digambar di dalamnya).
 - **Cek FCI**:
   - `renderChecks` menampilkan daftar cek.
@@ -97,13 +100,28 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
 - **HP & tablet**:
   - `html.sheetmode` aktif saat lebar < 760 atau layar sentuh < 1400. Panel muncul lewat `#mnav`.
   - Menu "Tampilan" muncul lewat container query `.stage` ≤ 735px.
+- **Course baru**: `newCourse()` dipakai tombol `#newTop` (bar atas) dan `#newC` (tab File). Ukuran arena, kecepatan, kelas, dan ukuran anjing ikut course sebelumnya; course lama kembali lewat Undo. Di HP tegak, `#newTop`/`#undo`/`#pngTop` tampil sebagai ikon saja.
+- **Jiplak gambar** (tab Course → "Jiplak gambar"):
+  - Data di `agility-trace` (terpisah dari course, tidak ikut undo/kode/ekspor): `{src (dataURL JPEG, maks 2000 px), iw, ih, x0, y0, x1, y1, op, on}`. `(x0,y0)`/`(x1,y1)` = piksel gambar untuk pojok arena (0,0) dan (w,h); gambar diregangkan per sumbu, jadi ikut kalau ukuran arena diubah.
+  - `traceDraw()` mengisi `<g id="trace">` (di antara `#field` dan `#layer`, `pointer-events="none"`) tanpa membangun ulang `<image>` tiap render.
+  - Mode atur pojok: `calib` (`calibStart`, `calibTapAt`, `calibStop`), banner `#traceBanner`, `html.calib` memindah tombol zoom ke kiri supaya pojok kanan bawah bisa diketuk. Ketuk dua pojok berurutan; sesudahnya muncul peringatan kalau perbandingan sisi di gambar beda dari ukuran arena.
+  - Lapisan SVG `#arena`: `#field` (lapangan + grid) → `#trace` → `#layer` (rintangan, jalur, pegangan) → `#ghost` → `#sim`.
+- **Nomor versi**: badge `#appVer` di header (sebelah nama aplikasi) diisi dari `#verLabel` di tab File, jadi cukup ubah label itu.
+- **Bar rintangan**: jump/spread/wall/tire tidak punya ⇄ Arah (arah diatur lewat Backside); Wrap hanya muncul kalau rintangan berikutnya ada di belakang jump (`wrapUseful`) atau Wrap sedang aktif. Tunnel/contact tetap punya ⇄ Arah. Tombol F membalik arah step pertama kalau ⇄ Arah tidak ada.
+- **Dua bahasa (ID/EN)**, v62:
+  - Pilihan di header (`.eyerow [data-lang]`) dan di tab File; disimpan di `agility-lang`. `setLang()` mengatur `<html lang>` dan judul halaman.
+  - Kode tetap bahasa Indonesia. Saat EN, `MutationObserver` menerjemahkan semua teks yang tampil + `title`/`aria-label`/`placeholder` lewat `tr()`: kamus `I18N` (kunci = teks dengan angka diganti `¤`, angka diisi kembali berurutan, koma desimal → titik) lalu pola `I18N_RE` untuk teks yang panjangnya berubah (daftar nomor). Teks asli disimpan per node (`trMemo`) supaya balik ke ID tanpa muat ulang.
+  - Elemen ber-`translate="no"` (nama course tersimpan) tidak diterjemahkan. Nilai input (nama course) tidak disentuh.
+  - Teks di luar DOM yang ikut diterjemahkan: SVG ekspor gambar (`tr()` pada teks di markup), nama course dari generator dan tombol Baru.
+  - **Teks UI baru wajib ditambahkan ke `I18N`** (atau `I18N_RE`). Cara cek: jalankan app dengan `localStorage['agility-lang']='"en"'` dan cari kata Indonesia yang tersisa.
 - **localStorage**:
-  - `agility-current`, `agility-saved`, `agility-scheme` (lama: `agility-field`), `agility-theme`, `agility-tab`, `agility-designer`, `agility-hidepath`, `agility-simhand`, `agility-hint-off`.
+  - `agility-current`, `agility-saved`, `agility-scheme` (lama: `agility-field`), `agility-theme`, `agility-tab`, `agility-designer`, `agility-hidepath`, `agility-simhand`, `agility-hint-off`, `agility-trace`, `agility-lang`.
   - Khusus PWA: `agility-unlock`.
 
 ## Cara ngetes
 
-- `tests/regression.mjs` menguji contoh A1/A3/CH/HUB tanpa `#checks li.bad`, generator N kali bersih dan berisi weave, dan tidak ada error JS.
+- `tests/trace.mjs` menguji upload gambar, atur pojok dengan mouse dan ketuk (iPhone 13), posisi gambar, rintangan bisa ditaruh di atasnya, dan gambar tetap ada setelah muat ulang.
+- `tests/regression.mjs` menguji contoh A1/A3/CH/HUB tanpa `#checks li.bad`, dua bahasa (EN menerjemahkan UI/peta, ID mengembalikan), bar rintangan (Arah/Backside/Wrap), tombol Baru + Undo, table hilang dari palet, Backside/Wrap memutari wing (jarak ke tiang > 0,45 m, tanpa tabrakan, siklus sisi lain lalu mati), generator N kali bersih dan berisi weave, dan tidak ada error JS.
 - Manual / tambahan:
   - **Perbaiki otomatis**: acak beberapa rintangan, klik `#fixBtn`, lalu cek masalahnya hilang.
   - **HP**: emulasi iPhone 13 / iPad. Uji pinch dengan CDP `Input.dispatchTouchEvent`.
@@ -111,7 +129,6 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
 
 ## Ide berikutnya
 
-- Fitur jiplak gambar: latar samar, cocokkan dua titik pojok, lalu taruh rintangan di atasnya.
 - Database online (mis. Supabase) untuk sinkron antar perangkat dan dibagikan ke klub.
 - Simulasi: split time per rintangan, dan gaya handling (front/rear/blind cross).
 - Ekspor PDF peta kompetisi (A4/A3) dengan daftar rintangan.
