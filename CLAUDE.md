@@ -101,7 +101,8 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
   - Header, bar alat, dan jarak antar-panel dirapatkan; palet satu kolom (96 px); panel kanan 330 px.
   - `#panelBtn` menyembunyikan panel kanan (≥1180 px, `html.panel-off`, disimpan di `agility-panel-off`).
   - `html.sidetools`: kalau ruang kosong di kiri-kanan peta setinggi penuh ≥92 px per sisi, `.stagebar` jadi kolom tipis melayang (Susun/Jalur di kiri; Tampilan, ▶, 👁, panel di kanan) supaya peta memakai seluruh tinggi. Diputuskan di `sizeSvg()`.
-  - `#selbar` melayang di pojok kiri bawah peta, satu baris (geser ke samping kalau panjang), disembunyikan kalau tidak ada yang dipilih.
+  - `#selbar` (bar rintangan terpilih) tidak menutupi peta (v67): `sizeSvg()` memindahkannya ke dalam `.stagebar` (`html.selinbar`). Bar alat di atas: satu baris bersama bar alat (geser ke samping kalau panjang), chip tampilan masuk menu Tampilan. Bar alat di samping (`sidetools`): tombol vertikal di kolom kiri di bawah Susun/Jalur. Di HP/tablet (`sheetmode`) `#selbar` kembali di bawah peta. Disembunyikan kalau tidak ada yang dipilih.
+  - `.stage` memakai `grid-template-columns:minmax(0,1fr)` supaya isinya tidak melebarkan kotak peta.
 - **HP & tablet**:
   - `html.sheetmode` aktif saat lebar < 760 atau layar sentuh < 1400. Panel muncul lewat `#mnav`.
   - Menu "Tampilan" muncul lewat container query `.stage` ≤ 735px.
