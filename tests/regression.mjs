@@ -132,6 +132,24 @@ for (const t of ['a1', 'a3', 'ch', 'hub']) {
   await tab('tpl'); await page.click('.tplcard[data-tpl="a1"]');
 }
 
+// Jalur tidak boleh balik menembus jump sendiri: sesudah jump yang rintangan berikutnya ada di belakangnya, jalur otomatis memutari wing
+{
+  const r = await page.evaluate(() => {
+    const X = 12, Y = 14;
+    course = migrate({ name: 'x', w: 30, h: 26, speed: 4, mctSpeed: 2.5, size: 'M', cls: { level: 3, type: 'agility' }, items: [
+      { id: 't2', type: 'tunnel', x: X - 6, y: Y - 9.5, rot: 60, len: 4 }, { id: 'w4', type: 'wall', x: X + 7.7, y: Y - 4.6, rot: 0 }, { id: 'j5', type: 'jump', x: X, y: Y, rot: 118 },
+      { id: 'c6', type: 'ctunnel', x: X + 10.2, y: Y + 1, rot: 180, len: 6, b1: 70, b2: 70 }, { id: 'l7', type: 'longjump', x: X + 14.3, y: Y - 5.9, rot: 0 }],
+      seq: [{ id: 't2', dir: 0 }, { id: 'w4', dir: 0 }, { id: 'j5', dir: 0 }, { id: 'c6', dir: 0 }, { id: 'l7', dir: 0 }] }); commit();
+    const R = lastRoute, nd = R.nodes.find(n => n.it.id === 'j5'), g = R.segs.find(s => s.from === nd);
+    const post = [add(nd.g.cp, rotv(rad(nd.it), [1, 0]), 1.05), add(nd.g.cp, rotv(rad(nd.it), [1, 0]), -1.05)];
+    let minPost = 9; for (const q of g.conn) if (dist(q, nd.g.exit) > 0.6) for (const p of post) minPost = Math.min(minPost, dist(q, p));
+    return { crosses: crossesOwn(nd, g.conn, true), auto: !!g.auto, minPost, coll: pathCollisions(R).length };
+  });
+  const ok = !r.crosses && r.auto && r.minPost > 0.45 && !r.coll;
+  console.log(`${ok ? 'ok   ' : 'GAGAL'} wrap otomatis (jalur tidak balik menembus jump)${ok ? '' : ': ' + JSON.stringify(r)}`); if (!ok) fail++;
+  await tab('tpl'); await page.click('.tplcard[data-tpl="a1"]');
+}
+
 let genBad = 0;
 for (let i = 0; i < GEN_RUNS; i++) {
   await tab('gen');
