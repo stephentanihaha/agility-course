@@ -80,10 +80,10 @@ for (const t of ['a1', 'a3', 'ch', 'hub']) {
   await page.evaluate(() => { sel = 'j2'; render(); });
   await page.click('#selbar [data-bs="1"]');
   const b1 = await probe(1, false);
-  if (!(b1.st.bs === 1 && b1.st.dir && b1.far > 1.5 && b1.minPost > 0.7 && !b1.coll)) { ok = false; why.push('backside ' + JSON.stringify(b1)); }
+  if (!(b1.st.bs === 1 && b1.st.dir && b1.far > 1.5 && b1.minPost > 0.45 && !b1.coll)) { ok = false; why.push('backside ' + JSON.stringify(b1)); }
   await page.click('#selbar [data-bs="1"]');
   const b2 = await probe(1, false);
-  if (!(b2.st.bs === 2 && b2.side === -b1.side && b2.minPost > 0.7 && !b2.coll)) { ok = false; why.push('backside sisi lain ' + JSON.stringify(b2)); }
+  if (!(b2.st.bs === 2 && b2.side === -b1.side && b2.minPost > 0.45 && !b2.coll)) { ok = false; why.push('backside sisi lain ' + JSON.stringify(b2)); }
   await page.click('#selbar [data-bs="1"]');
   const b3 = await page.evaluate(() => course.seq[1]);
   if (b3.bs || b3.dir) { ok = false; why.push('backside mati ' + JSON.stringify(b3)); }
@@ -92,7 +92,7 @@ for (const t of ['a1', 'a3', 'ch', 'hub']) {
   await page.evaluate(() => { sel = 'j2'; render(); });
   await page.click('#selbar [data-wr="1"]');
   const w1 = await probe(1, true);
-  if (!(w1.st.wr === 1 && w1.far > 1.5 && w1.minPost > 0.7 && !w1.coll)) { ok = false; why.push('wrap ' + JSON.stringify(w1)); }
+  if (!(w1.st.wr === 1 && w1.far > 1.5 && w1.minPost > 0.45 && !w1.coll)) { ok = false; why.push('wrap ' + JSON.stringify(w1)); }
   console.log(`${ok ? 'ok   ' : 'GAGAL'} backside & wrap${ok ? '' : ': ' + why.join(' | ')}`); if (!ok) fail++;
   await tab('tpl'); await page.click('.tplcard[data-tpl="a1"]'); // kembalikan arena normal untuk generator
 }

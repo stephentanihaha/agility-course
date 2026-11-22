@@ -80,7 +80,7 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
   - `geom()` membentuk geometri tiap rintangan.
   - `cubic()` membentuk sambungan Hermite, radius belok `TURN={S:1.0,M:1.3,I:1.45,L:1.6}`.
   - `buildConn` mengurus titik belok dan menghindari wing. `clampCone` membatasi sudut lewat jump.
-  - **Backside/Wrap** (tombol di bar rintangan, v59): `autoWrap(A,B)` memberi titik bantu tak tersimpan di lingkaran sekitar tiang wing (jari-jari `TURN+0.2`, kerangka arah lari, pusat digeser ≥0,6 m ke sisi tolakan/mendarat). Backside: garis lurus menyinggung lingkaran → busur → keluar tepat di garis palang. Wrap: mendarat di garis palang → busur → lepas menyinggung ke rintangan berikutnya. Titik busur tiap ≤45°, disambung dengan pegangan busur persis (4/3·tan(Δ/4)·r) (v60). Rintangan sebelum backside diarahkan ke sisi luar wing, hanya kalau `step.bs`/`step.wr` aktif. Course lama, contoh, dan generator tidak memakainya. `toggleBackside(i)` memaksa `dir` supaya anjing datang dari belakang palang. Kalau garis jalur ditarik, titik bantu disalin ke `wp` supaya bentuknya tidak loncat.
+  - **Backside/Wrap** (tombol di bar rintangan, v59): `autoWrap(A,B)` memberi titik bantu tak tersimpan di lingkaran sekitar tiang wing (jari-jari `max(1.1, TURN−0.1)` sejak v61, kerangka arah lari, pusat digeser ≥0,6 m ke sisi tolakan/mendarat). Backside: garis lurus menyinggung lingkaran → busur → keluar tepat di garis palang. Wrap: mendarat di garis palang → busur → lepas menyinggung ke rintangan berikutnya. Titik busur tiap ≤45°, disambung dengan pegangan busur persis (4/3·tan(Δ/4)·r) (v60). Rintangan sebelum backside diarahkan ke sisi luar wing, hanya kalau `step.bs`/`step.wr` aktif. Course lama, contoh, dan generator tidak memakainya. `toggleBackside(i)` memaksa `dir` supaya anjing datang dari belakang palang. Kalau garis jalur ditarik, titik bantu disalin ke `wp` supaya bentuknya tidak loncat.
   - `NOLINE` = weave, tunnel, ctunnel, dogwalk, aframe, teeter, longjump (garis jalur tidak digambar di dalamnya).
 - **Cek FCI**:
   - `renderChecks` menampilkan daftar cek.
@@ -113,7 +113,7 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
 ## Cara ngetes
 
 - `tests/trace.mjs` menguji upload gambar, atur pojok dengan mouse dan ketuk (iPhone 13), posisi gambar, rintangan bisa ditaruh di atasnya, dan gambar tetap ada setelah muat ulang.
-- `tests/regression.mjs` menguji contoh A1/A3/CH/HUB tanpa `#checks li.bad`, tombol Baru + Undo, table hilang dari palet, Backside/Wrap memutari wing (jarak ke tiang > 0,7 m, tanpa tabrakan, siklus sisi lain lalu mati), generator N kali bersih dan berisi weave, dan tidak ada error JS.
+- `tests/regression.mjs` menguji contoh A1/A3/CH/HUB tanpa `#checks li.bad`, tombol Baru + Undo, table hilang dari palet, Backside/Wrap memutari wing (jarak ke tiang > 0,45 m, tanpa tabrakan, siklus sisi lain lalu mati), generator N kali bersih dan berisi weave, dan tidak ada error JS.
 - Manual / tambahan:
   - **Perbaiki otomatis**: acak beberapa rintangan, klik `#fixBtn`, lalu cek masalahnya hilang.
   - **HP**: emulasi iPhone 13 / iPad. Uji pinch dengan CDP `Input.dispatchTouchEvent`.

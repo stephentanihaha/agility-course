@@ -448,7 +448,7 @@ textarea{font:12px/1.4 ui-monospace,Menlo,monospace;min-height:70px;resize:verti
       </div>
 
       <div class="tabpanel" data-panel="file" hidden>
-        <p class="note" style="text-align:right;margin:-4px 0 8px">Versi aplikasi: 60</p>
+        <p class="note" style="text-align:right;margin:-4px 0 8px">Versi aplikasi: 61</p>
         <div class="sect">
           <h2>Simpan</h2>
           <button class="btn primary block" id="save">Simpan course ini</button>
@@ -684,19 +684,19 @@ function hits(pts,self,g,prevIt,prevExit,nextIt){
 function wpList(key,create){if(key==='fin'){if(create&&!course.finWp)course.finWp=[];return course.finWp||[];}
   const st=course.seq[+key.slice(1)];if(!st)return [];if(create&&!st.wp)st.wp=[];return st.wp||[];}
 // Backside & wrap (tombol di bar rintangan, disimpan di step: bs = backside, wr = wrap; 2 = memutari wing sisi lain).
-// Jalur mengikuti lingkaran di sekitar tiang wing (pusat di samping tiang, digeser ≥0,6 m ke sisi tolakan/mendarat, jari-jari R+0,2):
+// Jalur mengikuti lingkaran di sekitar tiang wing (pusat di samping tiang, digeser ≥0,6 m ke sisi tolakan/mendarat, jari-jari max(1,1; R−0,1)):
 // backside = garis lurus menyinggung lingkaran → busur → keluar segaris palang; wrap = mendarat segaris lingkaran → busur → lepas menyinggung
 // ke rintangan berikutnya. Busur diwakili titik tiap ≤45° yang disambung sebagai busur lingkaran (k = 4/3·tan(Δ/4)·r).
 const WRAPPY=new Set(['jump','spread','wall','tire']);
 function autoWrap(A,B){
-  const R=TURN[(course&&course.size)||'M'],rr=R+0.2,p0=A.g.exit,p1=B.g.entry;
+  const R=TURN[(course&&course.size)||'M'],rr=Math.max(1.1,R-0.1),p0=A.g.exit,p1=B.g.entry;
   if(dist(p0,p1)<1.5)return [];
   // lingkaran dibangun di kerangka arah lari (a, v ⟂ a ke sisi wing), supaya jump yang dilompati miring juga mulus;
   // pusatnya di samping tiang wing luar dan digeser ≥0,6 m ke depan (wrap) / belakang (backside); busur mulai/berakhir tepat di garis palang
   const circ=(nd,a,sdRaw,flip,shift)=>{const bar=rotv(rad(nd.it),[1,0]),sd=(sdRaw||1)*(flip?-1:1),c=nd.g.cp||[nd.it.x,nd.it.y];
     let v=[-a[1],a[0]];if(dot(v,bar)*sd<0)v=[-v[0],-v[1]];
     const post=add(c,bar,sd*(wingW(nd.it)-0.05)),aP=dot(sub(post,c),a),lP=dot(sub(post,c),v);
-    const oa=shift>0?Math.max(shift,aP+0.3):Math.min(shift,aP-0.3),ol=Math.max(rr,lP+0.05);
+    const oa=shift>0?Math.max(shift,aP+0.3):Math.min(shift,aP-0.3),ol=rr;
     return {a,v,o:add(add(c,a,oa),v,ol)};};
   const at=(C,ph)=>{const r=ph*Math.PI/180;return {p:add(add(C.o,C.a,rr*Math.cos(r)),C.v,rr*Math.sin(r)),t:add([C.a[0]*-Math.sin(r),C.a[1]*-Math.sin(r)],C.v,Math.cos(r))};};
   // sudut titik singgung dari titik luar q (join = garis masuk ke lingkaran, leave = garis keluar dari lingkaran), arah putar φ naik
@@ -741,7 +741,7 @@ function route(){
   nodes.forEach((nd,i)=>{
     const c=cen(nd.it),prev=nodes[i-1],next=nodes[i+1];
     let P=prev?prev.g.exit:null,N=next?cen(next.it):null;
-    if(next&&next.kind==='step'&&next.step.bs&&WRAPPY.has(next.it.type)){const nb=rotv(rad(next.it),[1,0]),sd=(Math.sign(dot(sub(c,N),nb))||1)*(next.step.bs===2?-1:1);N=add(N,nb,sd*(wingW(next.it)+TURN[course.size||'M']+0.2));}
+    if(next&&next.kind==='step'&&next.step.bs&&WRAPPY.has(next.it.type)){const nb=rotv(rad(next.it),[1,0]),sd=(Math.sign(dot(sub(c,N),nb))||1)*(next.step.bs===2?-1:1);N=add(N,nb,sd*(wingW(next.it)+Math.max(1.1,TURN[course.size||'M']-0.1)));}
     if(!P&&!N){P=add(c,[0,-1]);N=add(c,[0,1]);}else if(!P)P=add(c,sub(c,N));else if(!N)N=add(c,sub(c,P));
     const fl=add(norm(sub(c,P)),norm(sub(N,c))),free0=vlen(fl)>0.05?norm(fl):norm(sub(N,P)),ax=rotv(rad(nd.it),[0,1]);
     // backside: anjing datang sesudah memutari wing, jadi arah lompat cuma dari sumbu + rintangan berikutnya; wrap: cuma dari arah datang
