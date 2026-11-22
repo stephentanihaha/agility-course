@@ -151,11 +151,31 @@ for (const t of ['a1', 'a3', 'ch', 'hub']) {
   await tab('tpl'); await page.click('.tplcard[data-tpl="a1"]');
 }
 
+// Aturan FCI: jarak antar rintangan mana pun minimal 1 m (tunnel di bawah dog walk/A-frame boleh); contact dimasuki/ditinggalkan lurus
+{
+  const r = await page.evaluate(() => {
+    const base = { name: 'x', w: 30, h: 26, speed: 4, mctSpeed: 2.5, size: 'M', cls: { level: 3, type: 'agility' } };
+    course = migrate({ ...base, items: [{ id: 'j1', type: 'jump', x: 5, y: 5, rot: 0 }, { id: 'j2', type: 'jump', x: 5, y: 5.6, rot: 0 }, { id: 'd', type: 'dogwalk', x: 18, y: 13, rot: 90 }, { id: 't', type: 'tunnel', x: 18, y: 13, rot: 0, len: 4 }], seq: [] }); commit();
+    const close = closePairs().map(x => x.a.id + x.b.id);
+    const row = [...document.querySelectorAll('#checks li')].some(li => /terlalu dekat/.test(li.textContent));
+    // contact: datang tegak lurus ke dog walk → harus terdeteksi; datang lurus → lolos
+    course = migrate({ ...base, items: [{ id: 'j1', type: 'jump', x: 6, y: 13, rot: 90 }, { id: 'd', type: 'dogwalk', x: 18, y: 18, rot: 90 }, { id: 'j3', type: 'jump', x: 29, y: 18, rot: 90 }], seq: [{ id: 'j1', dir: 0 }, { id: 'd', dir: 0 }, { id: 'j3', dir: 0 }] }); commit();
+    const straight = contactCrooked(lastRoute).length;
+    course.items[0].x = 11.5; course.items[0].y = 13; course.items[0].rot = 0; commit();
+    const crooked = contactCrooked(lastRoute).length;
+    return { close, row, straight, crooked };
+  });
+  const ok = r.close.length === 1 && r.close[0] === 'j1j2' && r.row && r.straight === 0 && r.crooked === 1;
+  console.log(`${ok ? 'ok   ' : 'GAGAL'} jarak minimal 1 m & contact lurus${ok ? '' : ': ' + JSON.stringify(r)}`); if (!ok) fail++;
+  await tab('tpl'); await page.click('.tplcard[data-tpl="a1"]');
+}
+
 let genBad = 0;
 for (let i = 0; i < GEN_RUNS; i++) {
   await tab('gen');
   await page.click('#genBtn');
   await page.waitForFunction(() => !document.querySelector('#genBtn').disabled && document.querySelector('#genOut').textContent.trim(), null, { timeout: 60000 });
+  await page.waitForTimeout(50); await page.waitForFunction(() => !fixBusy, null, { timeout: 60000 }); // generator bisa memanggil Perbaiki otomatis
   await tab('fci');
   const bad = await badChecks();
   const weave = await page.evaluate(() => course.seq.some(s => (course.items.find(i => i.id === s.id) || {}).type === 'weave'));
