@@ -510,7 +510,7 @@ html.sidetools:not(.sheetmode) .stagebar .iconbtn{min-height:36px}
       </div>
 
       <div class="tabpanel" data-panel="file" hidden>
-        <p class="note" style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:-4px 0 8px"><span class="langsw seg" role="group" aria-label="Bahasa / Language"><button data-lang="id">ID</button><button data-lang="en">EN</button></span><span id="verLabel">Versi aplikasi: 65</span></p>
+        <p class="note" style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:-4px 0 8px"><span class="langsw seg" role="group" aria-label="Bahasa / Language"><button data-lang="id">ID</button><button data-lang="en">EN</button></span><span id="verLabel">Versi aplikasi: 66</span></p>
         <div class="sect">
           <h2>Simpan</h2>
           <button class="btn primary block" id="save">Simpan course ini</button>
@@ -764,12 +764,15 @@ function autoWrap(A,B,o){
   // sudut titik singgung dari titik luar q (join = garis masuk ke lingkaran, leave = garis keluar dari lingkaran), arah putar φ naik
   const tang=(C,q,join)=>{const w=sub(q,C.o),D=vlen(w);if(D<=rr+0.05)return null;const psi=Math.atan2(dot(w,C.v),dot(w,C.a))*180/Math.PI,beta=Math.acos(rr/D)*180/Math.PI;return join?psi+beta:psi-beta;};
   const sweep=(C,f0,f1)=>{const n=Math.max(1,Math.ceil((f1-f0)/45)),d=(f1-f0)/n,k=4/3*Math.tan(d*Math.PI/720)*rr,out=[];for(let m=0;m<=n;m++){const q=at(C,f0+d*m);q.k=m<n?k:null;out.push(q);}return out;};
+  // titik bidik: garis menyinggung lingkaran dari titik yang sudah searah arah lari keluar dari A (p0 + t0·L), dan lepas dari lingkaran
+  // menuju titik sebelum mulut B searah arah masuk (p1 − t1·L), supaya garis lurus lalu masuk mulus tanpa tekukan
+  const L=Math.min(2.2,Math.max(1,dist(p0,p1)*0.25)),src=add(p0,A.g.tOut,L),dst=add(p1,B.g.tIn,-L);
   let bArc=null,aArc=null;
   if(o.wb){const a=B.g.tIn,c=B.g.cp||[B.it.x,B.it.y];
-    if(dot(sub(p0,c),a)>-0.5){const C=circ(B,a,o.sb,-0.6);let f=tang(C,p0,true);
+    if(dot(sub(p0,c),a)>-0.5){const C=circ(B,a,o.sb,-0.6);let f=tang(C,o.wa?p0:src,true);
       if(f!=null){while(f>270)f-=360;while(f<=270-360)f+=360;bArc=sweep(C,f,270);}}}
   if(o.wa){const a=A.g.tOut,c=A.g.cp||[A.it.x,A.it.y],tgt=bArc?bArc[0].p:p1;
-    if(dot(sub(tgt,c),a)<0.5){const C=circ(A,a,o.sa,0.6);let f=tang(C,tgt,false);
+    if(dot(sub(tgt,c),a)<0.5){const C=circ(A,a,o.sa,0.6);let f=tang(C,bArc?tgt:dst,false);
       if(f!=null){while(f<-90)f+=360;while(f>=270)f-=360;aArc=sweep(C,-90,f);}}}
   const out=[...(aArc||[])];if(aArc&&bArc)out[out.length-1].k=null;
   if(bArc)for(const q of bArc){q.b=1;out.push(q);}
@@ -849,12 +852,20 @@ function route(){
       const cost=plen(inA)+plen(inB)+1.0*turning(inA.concat(inB))+0.8*hits(inA.concat(inB),nd.it,g,prev&&prev.it,prev&&prev.g.exit,next&&next.it);
       if(!best||cost<best.cost)best={cost,sign,g};
     }
-    nd.sign=best.sign;nd.g=best.g;
+    nd.sign=best.sign;nd.g=best.g;nd.free=free;nd.signs=signs;
     if(i===1&&prev.kind==='start'){
       const sc=cen(prev.it),g=nd.g,behind=dot(sub(sc,g.entry),g.tIn)>-0.3;let aim=add(g.entry,g.tIn,-2.5);
       if(behind&&CROSS.has(nd.it.type)){const pp=[-g.tIn[1],g.tIn[0]],sd=Math.sign(dot(sub(sc,cen(nd.it)),pp))||1;aim=add(add(g.entry,g.tIn,-1.6),pp,sd*(wingW(nd.it)+1.3));}
       const t=dist(aim,sc)>0.5?norm(sub(aim,sc)):g.tIn;prev.g={entry:sc,exit:sc,tIn:t,tOut:t,inner:[sc]};}
   });
+  // jump dengan arah otomatis yang sambungannya butuh putaran wing: bandingkan dengan arah sebaliknya memakai sambungan sungguhan
+  // (panjang + belokan), supaya tidak memilih arah yang malah butuh backside lalu wrap berturut-turut
+  const connCost=(A,B,nd)=>{const ko=A.step&&A.step.h&&A.step.h.out,ki=B.step&&B.step.h&&B.step.h.in,c=buildConn(A,B,ko,ki,B.kind==='finish'?course.finWp:B.step&&B.step.wp);return {c:plen(c.conn)+0.8*turning(c.conn),auto:!!c.auto};};
+  nodes.forEach((nd,i)=>{const prev=nodes[i-1],next=nodes[i+1];
+    if(nd.kind!=='step'||!prev||!next||!WRAPPY.has(nd.it.type)||!nd.signs||nd.signs.length<2||nd.step.bs||nd.step.wr)return;
+    const a1=connCost(prev,nd),b1=connCost(nd,next);if(!a1.auto&&!b1.auto)return;
+    const alt={...nd,sign:-nd.sign,g:geom(nd.it,-nd.sign,nd.free,nd.step&&nd.step.h)},a2=connCost(prev,alt),b2=connCost(alt,next);
+    if(a2.c+b2.c<a1.c+b1.c-0.5){nd.sign=alt.sign;nd.g=alt.g;}});
   const pts=[],segs=[],arrows=[],pieces=[];let cur=[];
   nodes.forEach((nd,i)=>{
     if(i===0){pts.push(...nd.g.inner);if(NOLINE.has(nd.it.type))cur=[nd.g.exit];else cur.push(...nd.g.inner);return;}
