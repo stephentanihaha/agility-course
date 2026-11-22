@@ -2,7 +2,7 @@
 
 Aplikasi web untuk mendesain course dog agility gaya Smarter Agility dengan aturan FCI.
 Pemilik: Stephen (klub dog agility, calon juri FCI). Bahasa komunikasi: Indonesia santai ("gue/lo").
-Teks di aplikasi juga berbahasa Indonesia.
+Teks di kode ditulis dalam bahasa Indonesia; aplikasi punya pilihan bahasa ID/EN (lihat "Dua bahasa" di bawah).
 
 ## Struktur repo
 
@@ -36,7 +36,7 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
 ## Rilis
 
 1. Ubah `src/app.html` (dan `pwa/` kalau perlu).
-2. Naikkan label `Versi aplikasi: NN` di `src/app.html` **dan** `const VERSION = 'vNN'` di `pwa/public/sw.js`. Build menolak kalau keduanya beda.
+2. Naikkan label `Versi aplikasi: NN` (`#verLabel`, tab File) di `src/app.html` **dan** `const VERSION = 'vNN'` di `pwa/public/sw.js`. Build menolak kalau keduanya beda.
 3. `node scripts/build.mjs && node tests/regression.mjs && node tests/trace.mjs`.
 4. Deploy PWA: push ke GitHub (kalau project Vercel sudah tersambung ke repo ini), atau `npx vercel --prod` dari root repo.
 5. Artifact claude.ai: publish `src/app.html` ke https://claude.ai/artifact/8GPuBTMCyEGWi9kMZ6gNdj (baca dulu versi live-nya, lalu publish dengan `url` itu).
@@ -106,14 +106,22 @@ Playwright + Chromium sudah terpasang di container Claude Code. Di laptop: `npm 
   - `traceDraw()` mengisi `<g id="trace">` (di antara `#field` dan `#layer`, `pointer-events="none"`) tanpa membangun ulang `<image>` tiap render.
   - Mode atur pojok: `calib` (`calibStart`, `calibTapAt`, `calibStop`), banner `#traceBanner`, `html.calib` memindah tombol zoom ke kiri supaya pojok kanan bawah bisa diketuk. Ketuk dua pojok berurutan; sesudahnya muncul peringatan kalau perbandingan sisi di gambar beda dari ukuran arena.
   - Lapisan SVG `#arena`: `#field` (lapangan + grid) → `#trace` → `#layer` (rintangan, jalur, pegangan) → `#ghost` → `#sim`.
+- **Nomor versi**: badge `#appVer` di header (sebelah nama aplikasi) diisi dari `#verLabel` di tab File, jadi cukup ubah label itu.
+- **Bar rintangan**: jump/spread/wall/tire tidak punya ⇄ Arah (arah diatur lewat Backside); Wrap hanya muncul kalau rintangan berikutnya ada di belakang jump (`wrapUseful`) atau Wrap sedang aktif. Tunnel/contact tetap punya ⇄ Arah. Tombol F membalik arah step pertama kalau ⇄ Arah tidak ada.
+- **Dua bahasa (ID/EN)**, v62:
+  - Pilihan di header (`.eyerow [data-lang]`) dan di tab File; disimpan di `agility-lang`. `setLang()` mengatur `<html lang>` dan judul halaman.
+  - Kode tetap bahasa Indonesia. Saat EN, `MutationObserver` menerjemahkan semua teks yang tampil + `title`/`aria-label`/`placeholder` lewat `tr()`: kamus `I18N` (kunci = teks dengan angka diganti `¤`, angka diisi kembali berurutan, koma desimal → titik) lalu pola `I18N_RE` untuk teks yang panjangnya berubah (daftar nomor). Teks asli disimpan per node (`trMemo`) supaya balik ke ID tanpa muat ulang.
+  - Elemen ber-`translate="no"` (nama course tersimpan) tidak diterjemahkan. Nilai input (nama course) tidak disentuh.
+  - Teks di luar DOM yang ikut diterjemahkan: SVG ekspor gambar (`tr()` pada teks di markup), nama course dari generator dan tombol Baru.
+  - **Teks UI baru wajib ditambahkan ke `I18N`** (atau `I18N_RE`). Cara cek: jalankan app dengan `localStorage['agility-lang']='"en"'` dan cari kata Indonesia yang tersisa.
 - **localStorage**:
-  - `agility-current`, `agility-saved`, `agility-scheme` (lama: `agility-field`), `agility-theme`, `agility-tab`, `agility-designer`, `agility-hidepath`, `agility-simhand`, `agility-hint-off`, `agility-trace`.
+  - `agility-current`, `agility-saved`, `agility-scheme` (lama: `agility-field`), `agility-theme`, `agility-tab`, `agility-designer`, `agility-hidepath`, `agility-simhand`, `agility-hint-off`, `agility-trace`, `agility-lang`.
   - Khusus PWA: `agility-unlock`.
 
 ## Cara ngetes
 
 - `tests/trace.mjs` menguji upload gambar, atur pojok dengan mouse dan ketuk (iPhone 13), posisi gambar, rintangan bisa ditaruh di atasnya, dan gambar tetap ada setelah muat ulang.
-- `tests/regression.mjs` menguji contoh A1/A3/CH/HUB tanpa `#checks li.bad`, tombol Baru + Undo, table hilang dari palet, Backside/Wrap memutari wing (jarak ke tiang > 0,45 m, tanpa tabrakan, siklus sisi lain lalu mati), generator N kali bersih dan berisi weave, dan tidak ada error JS.
+- `tests/regression.mjs` menguji contoh A1/A3/CH/HUB tanpa `#checks li.bad`, dua bahasa (EN menerjemahkan UI/peta, ID mengembalikan), bar rintangan (Arah/Backside/Wrap), tombol Baru + Undo, table hilang dari palet, Backside/Wrap memutari wing (jarak ke tiang > 0,45 m, tanpa tabrakan, siklus sisi lain lalu mati), generator N kali bersih dan berisi weave, dan tidak ada error JS.
 - Manual / tambahan:
   - **Perbaiki otomatis**: acak beberapa rintangan, klik `#fixBtn`, lalu cek masalahnya hilang.
   - **HP**: emulasi iPhone 13 / iPad. Uji pinch dengan CDP `Input.dispatchTouchEvent`.

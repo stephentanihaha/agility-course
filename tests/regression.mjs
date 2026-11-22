@@ -97,6 +97,41 @@ for (const t of ['a1', 'a3', 'ch', 'hub']) {
   await tab('tpl'); await page.click('.tplcard[data-tpl="a1"]'); // kembalikan arena normal untuk generator
 }
 
+// Dua bahasa: EN menerjemahkan UI, peta (Ki/Ka → L/R, koma desimal → titik), lalu ID mengembalikan teks asli
+{
+  await tab('tpl'); await page.click('.tplcard[data-tpl="a3"]');
+  await page.click('.eyerow [data-lang="en"]');
+  const en = await page.evaluate(() => ({
+    tab: document.querySelector('.tabs [data-tab="fci"]').textContent.trim(),
+    save: document.querySelector('#saveTop').textContent.trim(),
+    lr: [...document.querySelectorAll('#layer text')].map(t => t.textContent).filter(t => t === 'L' || t === 'R' || t === 'Ki' || t === 'Ka'),
+    dec: tr('(5,4)'), list: tr('Jarak di luar batas: 2→3, 5→6'), lang: document.documentElement.lang,
+    ver: document.querySelector('#appVer').textContent }));
+  await page.evaluate(() => { sel = course.seq[2].id; render(); });
+  const bar = await page.evaluate(() => document.querySelector('#selbar').textContent);
+  await page.click('.eyerow [data-lang="id"]');
+  const id = await page.evaluate(() => ({ tab: document.querySelector('.tabs [data-tab="fci"]').textContent.trim(), save: document.querySelector('#saveTop').textContent.trim(),
+    ki: [...document.querySelectorAll('#layer text')].some(t => t.textContent === 'Ki' || t.textContent === 'Ka') }));
+  const ok = en.tab.startsWith('FCI check') && en.save === 'Save' && en.lr.length && en.lr.every(t => t === 'L' || t === 'R') && en.dec === '(5.4)'
+    && en.list === 'Spacing out of range: 2→3, 5→6' && en.lang === 'en' && /^v\d+$/.test(en.ver) && /from #/.test(bar)
+    && id.tab.startsWith('Cek FCI') && id.save === 'Simpan' && id.ki;
+  console.log(`${ok ? 'ok   ' : 'GAGAL'} dua bahasa ID/EN${ok ? '' : ': ' + JSON.stringify({ en, bar, id })}`); if (!ok) fail++;
+}
+
+// Bar rintangan: jump tanpa ⇄ Arah; Wrap hanya kalau rintangan berikutnya di belakang jump
+{
+  const r = await page.evaluate(() => {
+    course = migrate({ name: 'x', w: 24, h: 20, speed: 4, mctSpeed: 2.5, size: 'M', cls: { level: 3, type: 'agility' },
+      items: [{ id: 'j1', type: 'jump', x: 5, y: 16, rot: 0 }, { id: 'j2', type: 'jump', x: 11, y: 9, rot: 0 }, { id: 'j3', type: 'jump', x: 17, y: 16, rot: 0 }, { id: 'j4', type: 'jump', x: 17, y: 3, rot: 0 }, { id: 't', type: 'tunnel', x: 3, y: 5, rot: 0, len: 4 }],
+      seq: [{ id: 'j1', dir: -1 }, { id: 'j2', dir: 0 }, { id: 'j3', dir: 1 }, { id: 't', dir: 0 }] }); commit();
+    const q = id => { sel = id; render(); const b = document.querySelector('#selbar'); return { flip: !!b.querySelector('[data-flip]'), bs: !!b.querySelector('[data-bs]'), wr: !!b.querySelector('[data-wr]') }; };
+    const j2 = q('j2'); course.seq[2].id = 'j4'; commit(); const j2b = q('j2'); const t = q('t'); return { j2, j2b, t };
+  });
+  const ok = !r.j2.flip && r.j2.bs && r.j2.wr && !r.j2b.wr && r.t.flip && !r.t.bs;
+  console.log(`${ok ? 'ok   ' : 'GAGAL'} bar rintangan (Arah/Backside/Wrap)${ok ? '' : ': ' + JSON.stringify(r)}`); if (!ok) fail++;
+  await tab('tpl'); await page.click('.tplcard[data-tpl="a1"]');
+}
+
 let genBad = 0;
 for (let i = 0; i < GEN_RUNS; i++) {
   await tab('gen');
