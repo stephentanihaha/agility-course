@@ -224,7 +224,7 @@ html.calib .canvaswrap>.zoom{right:auto;left:22px;transform-origin:bottom left}
 .badge.bad{background:var(--danger);color:#fff}
 .badge.none{background:var(--line);color:var(--muted)}
 .tabpanel{padding:14px;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;overflow:auto}
-.sect{display:grid;gap:8px}
+.sect{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;min-width:0}
 h2{font-family:var(--display);margin:0;font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
@@ -258,10 +258,10 @@ textarea{font:12px/1.4 ui-monospace,Menlo,monospace;min-height:70px;resize:verti
 .rangerow{display:flex;align-items:center;gap:10px}.rangerow input{flex:1;accent-color:var(--accent)}.rangerow b{font:700 20px var(--display);min-width:28px;text-align:right;font-variant-numeric:tabular-nums}
 .usegrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px}.usegrid label{display:flex;align-items:center;gap:7px;font-size:14px;color:var(--fg);padding:5px 6px;border-radius:7px;cursor:pointer}.usegrid label:hover{background:var(--surface-2)}.usegrid input{accent-color:var(--accent);width:16px;height:16px;margin:0}.usegrid label.off{opacity:.45;pointer-events:none}
 .genlist{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13px;color:var(--fg)}
-.saved{display:grid;gap:6px;margin:0;padding:0;list-style:none}
-.saved li{display:flex;gap:6px;align-items:center;font-size:14px;padding:6px 8px;border-radius:8px;background:var(--surface-2)}
+.saved{display:grid;grid-template-columns:minmax(0,1fr);gap:4px;margin:0;padding:0;list-style:none;max-height:260px;overflow:auto}
+.saved li{display:flex;gap:4px;align-items:center;font-size:13.5px;padding:3px 4px 3px 10px;border-radius:8px;background:var(--surface-2);min-width:0}
 .saved li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.saved .btn{padding:4px 9px;min-height:30px;font-size:13px}
+.saved .btn{flex:0 0 auto;padding:2px 8px;min-height:28px;font-size:12.5px}
 .btngrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .overlay{position:fixed;inset:0;background:rgba(10,14,11,.82);display:grid;place-items:center;padding:20px;z-index:10}
 .overlay .box{background:var(--surface);border-radius:var(--r);padding:14px;display:grid;gap:10px;max-width:960px;width:100%;max-height:100%;overflow:auto}
@@ -530,7 +530,7 @@ html.sidetools:not(.sheetmode) .stagebar>#selbar #bend{width:100%}
       </div>
 
       <div class="tabpanel" data-panel="file" hidden>
-        <p class="note" style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:-4px 0 8px"><span class="langsw seg" role="group" aria-label="Bahasa / Language"><button data-lang="id">ID</button><button data-lang="en">EN</button></span><span id="verLabel">Versi aplikasi: 67</span></p>
+        <p class="note" style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin:-4px 0 8px"><span class="langsw seg" role="group" aria-label="Bahasa / Language"><button data-lang="id">ID</button><button data-lang="en">EN</button></span><span id="verLabel">Versi aplikasi: 68</span></p>
         <div class="sect">
           <h2>Simpan</h2>
           <button class="btn primary block" id="save">Simpan course ini</button>
